@@ -108,6 +108,8 @@ def tt_pro(f, d, n, M, K, k, k_sgd, r=5, batch=False, log=False):
         params = eqx.apply_updates(params, updates)
         return loss_val, params, opt_state
 
+    n_opt = None
+
     for m in range(int(M/K)):
         rng, key = jax.random.split(rng)
         key_s = jax.random.split(key, K)
@@ -124,9 +126,13 @@ def tt_pro(f, d, n, M, K, k, k_sgd, r=5, batch=False, log=False):
         for _ in range(k_sgd):
             loss_val, params, opt_state = make_step(params, ind_top, opt_state)
 
-        if log and (jnp.min(y) < y_opt):
-            print(f'Evals : {m*K:-7.1e} | Opt : {jnp.min(y):-14.7e}')
-        y_opt = min(y_opt, jnp.min(y))
+        is_upd = False
+        if n_opt is None or jnp.min(y) < y_opt:
+            n_opt = ind[jnp.argmin(y)]
+            y_opt = jnp.min(y)
+            is_upd = True
 
-    # TODO: return n_opt (index!)
-    return y_opt
+        if log and is_upd:
+            print(f'Evals : {m*K:-7.1e} | Opt : {y_opt:-14.7e}')
+
+    return n_opt
