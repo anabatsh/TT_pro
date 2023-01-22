@@ -29,7 +29,7 @@ def calc_test(d=10, n=100, M = 2.E+5, K=20, k=1, k_sgd=10, r=5):
     # размерности d с числом узлов n по каждой моде) для заданного набора
     # (батча) мульти-индексов.
 
-    y_opt = tt_pro(f, d, n, M, K, k, k_sgd, r, log=True)
+    y_opt = tt_pro(f, d, n, M, K, k, k_sgd, r, batch=True, log=True)
     # y_opt = f(n_opt)
 
     print(y_opt)

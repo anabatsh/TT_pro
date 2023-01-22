@@ -85,7 +85,7 @@ def build_initial(d, n, r):
     return [jnp.array(q1) for q1 in q0]
 
 
-def tt_pro(f, d, n, M, K, k, k_sgd, r=5, log=False):
+def tt_pro(f, d, n, M, K, k, k_sgd, r=5, batch=False, log=False):
     rng = jax.random.PRNGKey(42)
     y_opt = jnp.inf
 
@@ -113,7 +113,10 @@ def tt_pro(f, d, n, M, K, k, k_sgd, r=5, log=False):
         key_s = jax.random.split(key, K)
         ind = generate_random_index(key_s, params)
 
-        y = f(ind)
+        if batch:
+            y = f(ind)
+        else:
+            y = np.array([f(i) for i in ind])
 
         ind_sort = np.argsort(y)
         ind_top = ind[ind_sort[:k], :]
