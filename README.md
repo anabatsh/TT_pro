@@ -22,10 +22,8 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 4. Install dependencies:
     ```bash
-    pip install numpy teneva==0.12.8 jax optax equinox qubogen dwave-neal
+    pip install numpy teneva==0.12.8 jax optax equinox qubogen dwave-neal gekko
     ```
-
-    > You may also need `networkx` and `pip install decorator==5.0.9` if it works with errors. If "qubo-nn" works with errors, run "pip install -U numpy==1.20".
 
 5. Delete virtual environment at the end of the work (optional):
     ```bash
@@ -40,6 +38,9 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 2. Run `python calc.py qubo`
     > The results will be presented in the text file `result/logs/qubo.txt`
+
+3. Run `python calc.py control`
+    > The results will be presented in the text file `result/logs/control.txt`
 
 
 ## Authors
