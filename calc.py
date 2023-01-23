@@ -9,35 +9,27 @@ from utils import Log
 from utils import folder_ensure
 
 
-def calc_test(d=10, n=100, M = 2.E+5, K=20, k=1, k_sgd=10, r=5, ANOVA_M=None):
-    """Perform computations to test the TT-PRO method."""
-    log = Log(f'result/logs/calc_test.txt')
+def calc_test(d=10, n=100, M=2.E+4, K=20, k=2, k_gd=50, r=5, M_ANOVA=None):
+    """Perform simple computations to test / check the TT-PRO method."""
+    log = Log(f'result/logs/test.txt')
+    time = tpc()
 
-    txt = f'---> CALC TEST '
-    txt += f'| d: {d:-4d} | n: {n:-5d} | K: {K:-3d} | k: {k:-3d} '
-    txt += f'| k_sgd: {k_sgd:-3d} | M: {M:-7.1e} | r: {r:-3d} \n'
+    txt = f'--> TEST | '
+    txt += f'd={d} n={n} M={M:-7.1e} K={K} k={k} k_gd={k_gd} r={r}'
     log(txt)
 
-    # Целевая функция (можно взять: 'Ackley', 'Alpine', 'Dixon', 'Exponential',
+    # Target function ('Ackley', 'Alpine', 'Dixon', 'Exponential',
     # 'Grienwank', 'Michalewicz', 'Qing', 'Rastrigin', 'Schaffer', 'Schwefel'):
     func = teneva.func_demo_all(d, names=['Schaffer'])[0]
     func.set_grid(n, kind='uni')
     f = func.get_f_ind
 
-    # f - это целевая функция, в нашем случае вычисляющая значения
-    # дискретизированной функции Schaffer (то есть неявно заданного тензора
-    # размерности d с числом узлов n по каждой моде) для заданного набора
-    # (батча) мульти-индексов.
-    if ANOVA_M is None:
-        n_opt = tt_pro(f, d, n, M, K, k, k_sgd, r, batch=True, log=True)
-    else:
-        def f_ANOVA(x):
-            return 1./(1e-4 + f(x))
-
-        n_opt = tt_pro(f, d, n, M, K, k, k_sgd, r, batch=True, log=True, f_ANOVA=f_ANOVA, M_ANOVA=ANOVA_M)
+    n_opt = tt_pro(f, d, n, M, K, k, k_gd, r, M_ANOVA, batch=True, log=True)
     y_opt = f(n_opt)
 
-    log(f'\nResult : {y_opt:-14.7e}')
+    log(f'\n--------')
+    log(f'Result : {y_opt:-14.7e}')
+    log(f'Time   : {tpc()-time:-14.3f}')
 
 
 if __name__ == '__main__':
@@ -49,8 +41,9 @@ if __name__ == '__main__':
     mode = sys.argv[1] if len(sys.argv) > 1 else 'test'
 
     if mode == 'test':
-        calc_test(ANOVA_M=20000, k_sgd=50)
-        # calc_test()
-    # TODO: здесь будут разные варианты запуска (разные задачи)
+        calc_test() # M_ANOVA=20000
+    elif mode == 'qubo':
+        pass
+        # TODO: здесь будут разные варианты запуска (разные задачи)
     else:
         raise ValueError(f'Invalid computation mode "{mode}"')
