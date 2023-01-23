@@ -33,14 +33,14 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 ## Usage
 
-1. Run `python calc.py test`
-    > The results will be presented in the text file `result/logs/test.txt`
-
-2. Run `python calc.py qubo`
-    > The results will be presented in the text file `result/logs/qubo.txt`
-
-3. Run `python calc.py control`
+1. Run `python calc.py control`
     > The results will be presented in the text file `result/logs/control.txt`
+
+2. Run `python calc.py func`
+    > The results will be presented in the text file `result/logs/func.txt`
+
+3. Run `python calc.py qubo`
+    > The results will be presented in the text file `result/logs/qubo.txt`
 
 
 ## Authors

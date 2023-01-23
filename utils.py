@@ -1,3 +1,4 @@
+import jax.numpy as jnp
 import numpy as np
 import os
 
@@ -22,3 +23,11 @@ class Log:
 
 def folder_ensure(fpath):
     os.makedirs(fpath, exist_ok=True)
+
+
+def get_many(Y, I):
+    """Compute the elements of the TT-tensor on many indices."""
+    Q = Y[0][0, I[:, 0], :]
+    for i in range(1, len(Y)):
+        Q = jnp.einsum('kq,qkp->kp', Q, Y[i][:, I[:, i], :])
+    return Q[:, 0]

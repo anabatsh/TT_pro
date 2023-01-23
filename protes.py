@@ -7,7 +7,7 @@ import teneva
 from time import perf_counter as tpc
 
 
-def protes(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, info={}, batch=False, log=False):
+def protes(f, d, n, M, K, k, k_gd, r, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=False, log=False, log_ind=False):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
@@ -29,19 +29,22 @@ def protes(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, info={}, batch=False, log=Fa
         k (int): number of selected candidates for all batches (< K).
         k_gd (int): number of GD iterations for each batch.
         r (int): TT-rank of the constructed probability TT-tensor.
+        lr (float): learning rate for GD.
+        sig (float): parameter for exponential in loss function. If is None,
+            then base method with "top-k" candidates will be used.
         M_ANOVA (int): number of requests used for TT-ANOVA initial
             approximation. If it is zero or None, then random initial TT-tensor
             will be used.
-        info (dict): an optional dictionary which will be filled with
-            information about algorithm workflow.
         batch (bool): if is True, then function "f" has 2D dimensional input
             (several samples). Otherwise, the input is one-dimensional.
         log (bool): if flag is set, then the information about the progress of
             the algorithm will be printed every step.
+        log_ind (bool): if flag is set and "log" is True, then the current
+            optimal multi-index will be printed every step.
 
     Returns:
-        np.ndarray: multi-index corresponding to the found optimum (in the
-        current version - only minimum is supported) of the tensor.
+        list: multi-index corresponding to the found optimum of the tensor (in
+        the current version only minimum is supported).
 
     """
     time = tpc()
@@ -53,9 +56,9 @@ def protes(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, info={}, batch=False, log=Fa
 
     params = _generate_initial(d, n, r, f_batch, M_ANOVA)
     generate_random_index = _build_generate_random_index()
-    optim = optax.adam(1.E-4)
+    optim = optax.adam(lr)
     opt_state = optim.init(params)
-    make_step = _build_make_step(optim)
+    make_step = _build_make_step(optim, sig)
 
     while True:
         rng, key = jax.random.split(rng)
@@ -68,7 +71,8 @@ def protes(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, info={}, batch=False, log=Fa
         ind_top = ind[ind_sort[:k], :]
 
         for _ in range(k_gd):
-            loss_val, params, opt_state = make_step(params, ind_top, opt_state)
+            loss_val, params, opt_state = make_step(params, opt_state,
+                ind, y, y_opt if y_opt < 1.E+10 else 0.)
 
         is_upd = False
         if n_opt is None or jnp.min(y) < y_opt:
@@ -80,13 +84,13 @@ def protes(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, info={}, batch=False, log=Fa
             text = ''
             text += f'Evals : {M_cur:-7.1e} | '
             text += f'Opt : {y_opt:-14.7e} | '
-            text += f'Time : {tpc()-time:-14.3f}'
+            text += f'Time : {tpc()-time:-7.3f}'
+            if log_ind:
+                text += f' | n : {"".join([str(n) for n in n_opt])}'
             print(text)
 
         if M_cur >= M:
             break
-
-    info['t'] = tpc() - time
 
     return n_opt
 
@@ -94,23 +98,20 @@ def protes(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, info={}, batch=False, log=Fa
 def _build_generate_random_index():
     """Sample random multi-index from probability TT-tensor."""
     def generate_random_index(key, z):
-        # z - это тензор вероятности в TT-формате,
-        # функция возвращает один вероятностно сгенерированный мульти-индекс
-
         d = len(z)
         keys = jax.random.split(key, d)
         res = jnp.zeros(d, dtype=jnp.int32)
-        phi = [[]]*(d+1)
+        phi = [[]] * (d+1)
         phi[-1] = jnp.ones(1)
         for i in range(d-1, 0, -1):
             mat = jnp.sum(z[i], axis=1)
-            phi[i] = mat@phi[i+1]
-            phi[i] = phi[i]/jnp.linalg.norm(phi[i])
+            phi[i] = mat @ phi[i+1]
+            phi[i] = phi[i] / jnp.linalg.norm(phi[i])
 
         p = jnp.einsum('aib,b->ai', z[0], phi[1])
         p = p.flatten()
         p = jnp.abs(p)
-        p = p/p.sum()
+        p = p / p.sum()
 
         ind = jax.random.choice(keys[0], jnp.arange(z[0].shape[1]), p=p)
 
@@ -120,11 +121,11 @@ def _build_generate_random_index():
         for i in range(1, d):
             p = jnp.einsum('a,aib,b->i', phi[i-1], z[i], phi[i+1])
             p = jnp.abs(p)
-            p = p/jnp.sum(p)
+            p = p / jnp.sum(p)
             ind = jax.random.choice(keys[i], jnp.arange(z[i].shape[1]), p=p)
             mat = z[i][:, ind, :]
-            phi[i] = phi[i-1]@mat
-            phi[i] = phi[i]/jnp.linalg.norm(phi[i])
+            phi[i] = phi[i-1] @ mat
+            phi[i] = phi[i] / jnp.linalg.norm(phi[i])
             res = res.at[i].set(ind)
 
         return res
@@ -132,18 +133,28 @@ def _build_generate_random_index():
     return jax.jit(jax.vmap(generate_random_index, (0, None)))
 
 
-def _build_make_step(optim):
+def _build_make_step(optim, sig=None):
     """Perform GD step for probability TT-tensor."""
     compute_likelihood = jax.jit(jax.vmap(_likelihood, (0, None)))
 
-    def loss(z, ind1):
-        l = -compute_likelihood(ind1, z)
-        # l += compute_likelihood(ind2, z)
+    @jax.jit
+    def loss_old(z, ind_top, val=None, y_opt=None):
+        l = -compute_likelihood(ind_top, z)
         return jnp.mean(l)
 
     @jax.jit
-    def make_step(params, ind1, opt_state):
-        loss_val, grads = jax.value_and_grad(loss)(params, ind1)
+    def loss_new(z, ind, val, y_opt):
+        f = jnp.exp(-1./sig * (val-jnp.min(val)))
+        #f = jnp.exp(-1./sig * (val-y_opt))
+        p = compute_likelihood(ind, z)
+        l = f * p
+        return -jnp.mean(l)
+
+    loss = loss_new if sig else loss_old
+
+    @jax.jit
+    def make_step(params, opt_state, ind_top, val, y_opt):
+        loss_val, grads = jax.value_and_grad(loss)(params, ind_top, val, y_opt)
         updates, opt_state = optim.update(grads, opt_state)
         params = eqx.apply_updates(params, updates)
         return loss_val, params, opt_state
@@ -175,30 +186,30 @@ def _likelihood(ind, z):
     """Likelihood in multi-index ind for TT-tensor z."""
     d = len(z)
     res = jnp.zeros(d, dtype=jnp.int32)
-    phi = [[]]*(d+1)
+    phi = [[]] * (d+1)
     phi[-1] = jnp.ones(1)
 
     for i in range(d-1, 0, -1):
         mat = jnp.sum(z[i], axis=1)
-        phi[i] = mat@phi[i+1]
-        #nrm = jnp.linalg.norm(phi)
-        phi[i] = phi[i]/jnp.linalg.norm(phi[i])
-        #mat z[i] = z[i]/nrm
+        phi[i] = mat @ phi[i+1]
+        phi[i] = phi[i] / jnp.linalg.norm(phi[i])
+    phi[0] = z[0][0, ind[0], :]
 
     p = jnp.einsum('aib,b->ai', z[0], phi[1])
     p = p.flatten()
     p = jnp.abs(p)
-    p = p/p.sum()
-    phi[0] = z[0][0, ind[0], :]
+    p = p / p.sum()
+
     p_all = [p[ind[0]]]
 
     for i in range(1, d):
         p = jnp.einsum('a,aib,b->i', phi[i-1], z[i], phi[i+1])
         p = jnp.abs(p)
-        p = p/jnp.sum(p)
-        mat = z[i][:, ind[i], :]
-        phi[i] = phi[i-1]@mat
-        phi[i] = phi[i]/jnp.linalg.norm(phi[i])
+        p = p / jnp.sum(p)
         p_all.append(p[ind[i]])
+
+        mat = z[i][:, ind[i], :]
+        phi[i] = phi[i-1] @ mat
+        phi[i] = phi[i] / jnp.linalg.norm(phi[i])
 
     return jnp.sum(jnp.log(jnp.array(p_all)))
