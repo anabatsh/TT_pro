@@ -22,24 +22,26 @@ Method TT-PRO (Tensor Train PRobability Optmizer) for optimization of the multid
 
 4. Install dependencies:
     ```bash
-    pip install numpy teneva==0.12.8 jax optax equinox
+    pip install numpy teneva==0.12.8 jax optax equinox qubogen dwave-neal
     ```
+
+    > You may also need `networkx` and `pip install decorator==5.0.9` if it works with errors. If "qubo-nn" works with errors, run "pip install -U numpy==1.20".
 
 5. Delete virtual environment at the end of the work (optional):
     ```bash
-    conda activate && conda remove --name NAME --all -y
+    conda activate && conda remove --name tt_pro --all -y
     ```
 
 
 ## Usage
 
 1. Run `python calc.py test`
-    > The results will be presented in the text file `result/logs/calc_test.txt`
+    > The results will be presented in the text file `result/logs/test.txt`
 
 
 ## Authors
 
 - [Anastasia Batsheva](https://github.com/anabatsh)
+- [Ivan Oseledets](https://github.com/oseledets)
 - [Andrei Chertkov](https://github.com/AndreiChertkov)
 - [Gleb Ryzhakov](https://github.com/G-Ryzhakov)
-- [Ivan Oseledets](https://github.com/oseledets)

@@ -118,7 +118,7 @@ def likelihood(ind, z):
     return jnp.sum(jnp.log(jnp.array(p_all)))
 
 
-def tt_pro(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, batch=False, log=False):
+def tt_pro(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, info={}, batch=False, log=False):
     if log:
         print('>>> Start compilation...')
 
@@ -148,7 +148,7 @@ def tt_pro(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, batch=False, log=False):
         y = f_batch(ind)
         M_cur += K
 
-        ind_sort = np.argsort(y)
+        ind_sort = np.argsort(y, kind='stable')
         ind_top = ind[ind_sort[:k], :]
 
         for _ in range(k_gd):
@@ -169,5 +169,7 @@ def tt_pro(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, batch=False, log=False):
 
         if M_cur >= M:
             break
+
+    info['t'] = tpc()-time
 
     return n_opt
