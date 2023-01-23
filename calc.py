@@ -9,7 +9,7 @@ from utils import Log
 from utils import folder_ensure
 
 
-def calc_test(d=10, n=100, M = 2.E+5, K=20, k=1, k_sgd=10, r=5):
+def calc_test(d=10, n=100, M = 2.E+5, K=20, k=1, k_sgd=10, r=5, ANOVA_M=None):
     """Perform computations to test the TT-PRO method."""
     log = Log(f'result/logs/calc_test.txt')
 
@@ -28,8 +28,13 @@ def calc_test(d=10, n=100, M = 2.E+5, K=20, k=1, k_sgd=10, r=5):
     # дискретизированной функции Schaffer (то есть неявно заданного тензора
     # размерности d с числом узлов n по каждой моде) для заданного набора
     # (батча) мульти-индексов.
+    if ANOVA_M is None:
+        n_opt = tt_pro(f, d, n, M, K, k, k_sgd, r, batch=True, log=True)
+    else:
+        def f_ANOVA(x):
+            return 1./(1e-4 + f(x))
 
-    n_opt = tt_pro(f, d, n, M, K, k, k_sgd, r, batch=True, log=True)
+        n_opt = tt_pro(f, d, n, M, K, k, k_sgd, r, batch=True, log=True, f_ANOVA=f_ANOVA, M_ANOVA=ANOVA_M)
     y_opt = f(n_opt)
 
     log(f'\nResult : {y_opt:-14.7e}')
@@ -44,7 +49,8 @@ if __name__ == '__main__':
     mode = sys.argv[1] if len(sys.argv) > 1 else 'test'
 
     if mode == 'test':
-        calc_test()
+        calc_test(ANOVA_M=20000, k_sgd=50)
+        # calc_test()
     # TODO: здесь будут разные варианты запуска (разные задачи)
     else:
         raise ValueError(f'Invalid computation mode "{mode}"')

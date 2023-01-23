@@ -84,12 +84,25 @@ def build_initial(d, n, r):
         q0.append(np.random.random(size=(rs[i], n, rs[i+1])))
     return [jnp.array(q1) for q1 in q0]
 
+def build_initial_ANOVA(shape, r, f, M):
+    I = teneva.sample_lhs(shape, M)
+    Y = [f(x)**4 for x in I]
+    q0 = teneva.ANOVA(I, Y).cores(r=r, rel_noise=0.1)
 
-def tt_pro(f, d, n, M, K, k, k_sgd, r=5, batch=False, log=False):
+    return [jnp.array(q1) for q1 in q0]
+
+
+
+
+def tt_pro(f, d, n, M, K, k, k_sgd, r=5, batch=False, log=False, f_ANOVA=None, M_ANOVA=None):
     rng = jax.random.PRNGKey(42)
     y_opt = jnp.inf
 
-    params = build_initial(d, n, r)
+    if M_ANOVA is None:
+        params = build_initial(d, n, r)
+    else:
+        params = build_initial_ANOVA([n]*d, r, f_ANOVA, M_ANOVA)
+        M -= M_ANOVA
 
     optim = optax.adam(1.E-4)
     opt_state = optim.init(params)
