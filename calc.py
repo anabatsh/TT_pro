@@ -9,7 +9,7 @@ from utils import Log
 from utils import folder_ensure
 
 
-def calc_test(d=10, n=100, M=2.E+4, K=20, k=2, k_gd=50, r=5, M_ANOVA=None):
+def calc_test(d=10, n=100, M=1.E+4, K=20, k=1, k_gd=100, r=5, M_ANOVA=None):
     """Perform simple computations to test / check the TT-PRO method."""
     log = Log(f'result/logs/test.txt')
     time = tpc()
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     mode = sys.argv[1] if len(sys.argv) > 1 else 'test'
 
     if mode == 'test':
-        calc_test() # M_ANOVA=20000
+        calc_test() # M_ANOVA=1.E+3
     elif mode == 'qubo':
         pass
         # TODO: здесь будут разные варианты запуска (разные задачи)

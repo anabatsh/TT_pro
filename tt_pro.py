@@ -75,7 +75,7 @@ def generate_initial(d, n, r, f=None, M=None):
 
     else:
         # Initial approximation with TT-ANOVA:
-        I_trn = teneva.sample_lhs([n]*d, M)
+        I_trn = teneva.sample_lhs([n]*d, int(M))
         Y_trn = f(I_trn)
         Y_trn = 1./(1.E-4 + Y_trn)
         Y_trn = Y_trn**4
@@ -125,7 +125,7 @@ def tt_pro(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, batch=False, log=False):
     time = tpc()
     rng = jax.random.PRNGKey(42)
     f_batch = f if batch else lambda I: np.array([f(i) for i in I])
-    M_cur = M_ANOVA or 0
+    M_cur = int(M_ANOVA or 0)
     n_opt = None
     y_opt = jnp.inf
 
