@@ -1,5 +1,5 @@
---> QUBO | d=100 M=1.0e+04 K=20 k=4 k_gd=100 r=5
+--> QUBO | d=100 M=1.0e+05 K=20 k=1 k_gd=10 r=5
 
 --------
-Result : -1.3880000e+03 | Baseline: -1.4240000e+03
-Time   :        208.788 | Baseline:  1.0480661e-02
+Result : -1.3830000e+03 | Baseline: -1.4240000e+03
+Time   :        225.558 | Baseline:  7.9126690e-03

@@ -3,7 +3,7 @@
 
 ## Description
 
-Method TT-PRO (Tensor Train PRobability Optmizer) for optimization of the multidimensional arrays and  discretized multivariable functions based on the tensor train (TT) format.
+Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of the multidimensional arrays and  discretized multivariable functions based on the tensor train (TT) format.
 
 
 ## Installation
@@ -37,6 +37,9 @@ Method TT-PRO (Tensor Train PRobability Optmizer) for optimization of the multid
 
 1. Run `python calc.py test`
     > The results will be presented in the text file `result/logs/test.txt`
+
+2. Run `python calc.py qubo`
+    > The results will be presented in the text file `result/logs/qubo.txt`
 
 
 ## Authors

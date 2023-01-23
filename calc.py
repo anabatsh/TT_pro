@@ -1,13 +1,15 @@
+import jax
+import jax.numpy as jnp
 import numpy as np
 import sys
 import teneva
 from time import perf_counter as tpc
 
 
+from protes import protes
 from qubo import qubo_build_function
 from qubo import qubo_build_matrix
 from qubo import qubo_solve_baseline
-from tt_pro import tt_pro
 from utils import Log
 from utils import folder_ensure
 
@@ -16,7 +18,7 @@ def calc_control():
     raise NotImplementedError('TODO')
 
 
-def calc_qubo(d=100, M=1.E+4, K=20, k=4, k_gd=100, r=5):
+def calc_qubo(d=100, M=1.E+5, K=20, k=1, k_gd=10, r=5):
     log = Log(f'result/logs/qubo.txt')
 
     txt = f'--> QUBO | '
@@ -29,9 +31,9 @@ def calc_qubo(d=100, M=1.E+4, K=20, k=4, k_gd=100, r=5):
     y_opt_ref = qubo_solve_baseline(Q)
     t_ref = tpc() - t_ref
 
-    f = qubo_build_function(np.array(Q))
+    f = qubo_build_function(jnp.array(Q))
     info = {}
-    n_opt = tt_pro(f, d, 2, M, K, k, k_gd, r, info=info, batch=True, log=True)
+    n_opt = protes(f, d, 2, M, K, k, k_gd, r, info=info, batch=True, log=True)
     y_opt = f(n_opt.reshape(1, -1))[0]
 
     log(f'\n--------')
@@ -55,7 +57,7 @@ def calc_test(d=10, n=100, M=1.E+4, K=20, k=1, k_gd=100, r=5, M_ANOVA=None):
     f = func.get_f_ind
 
     info = {}
-    n_opt = tt_pro(f, d, n, M, K, k, k_gd, r, M_ANOVA, info=info,
+    n_opt = protes(f, d, n, M, K, k, k_gd, r, M_ANOVA, info=info,
         batch=True, log=True)
     y_opt = f(n_opt)
 

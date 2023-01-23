@@ -19,14 +19,6 @@ class Log:
         text = '>>> ' + name
         self(text)
 
-    def res(self, res):
-        text = ''
-        name = res['method']
-        text += '  - ' + name + ' ' * max(0, self.len_pref-len(name))
-        text += f' | error : {res["e_tst"]:-7.1e}'
-        text += f' | time : {res["t"]:-7.3f}'
-        self(text)
-
 
 def folder_ensure(fpath):
     os.makedirs(fpath, exist_ok=True)
