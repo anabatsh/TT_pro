@@ -23,7 +23,7 @@ def generate_random_index_(key, z):
         phi[i] = mat@phi[i+1]
         phi[i] = phi[i]/jnp.linalg.norm(phi[i])
 
-    p = jnp.einsum('aib,b->ai',z[0], phi[1])
+    p = jnp.einsum('aib,b->ai', z[0], phi[1])
     p = p.flatten()
     p = jnp.abs(p)
     p = p/p.sum()
@@ -34,7 +34,7 @@ def generate_random_index_(key, z):
     res = res.at[0].set(ind)
 
     for i in range(1, d):
-        p = jnp.einsum('a,aib,b->i',phi[i-1],z[i], phi[i+1])
+        p = jnp.einsum('a,aib,b->i', phi[i-1], z[i], phi[i+1])
         p = jnp.abs(p)
         p = p/jnp.sum(p)
         ind = jax.random.choice(keys[i], jnp.arange(z[i].shape[1]), p=p)
@@ -59,14 +59,14 @@ def compute_likelihood_(ind, z):
         #nrm = jnp.linalg.norm(phi)
         phi[i] = phi[i]/jnp.linalg.norm(phi[i])
         #mat z[i] = z[i]/nrm
-    p = jnp.einsum('aib,b->ai',z[0], phi[1])
+    p = jnp.einsum('aib,b->ai', z[0], phi[1])
     p = p.flatten()
-    p = abs(p)
+    p = jnp.abs(p)
     p = p/p.sum()
     phi[0] = z[0][0, ind[0], :]
     p_all = [p[ind[0]]]
     for i in range(1, d):
-        p = jnp.einsum('a,aib,b->i',phi[i-1],z[i], phi[i+1])
+        p = jnp.einsum('a,aib,b->i', phi[i-1], z[i], phi[i+1])
         p = jnp.abs(p)
         p = p/jnp.sum(p)
         mat = z[i][:, ind[i], :]
