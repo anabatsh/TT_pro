@@ -16,7 +16,7 @@ def calc_control():
     raise NotImplementedError('TODO')
 
 
-def calc_qubo(d=10, M=1.E+3, K=10, k=4, k_gd=100, r=5):
+def calc_qubo(d=100, M=1.E+4, K=20, k=4, k_gd=100, r=5):
     log = Log(f'result/logs/qubo.txt')
 
     txt = f'--> QUBO | '

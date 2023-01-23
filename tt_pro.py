@@ -119,9 +119,6 @@ def likelihood(ind, z):
 
 
 def tt_pro(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, info={}, batch=False, log=False):
-    if log:
-        print('>>> Start compilation...')
-
     time = tpc()
     rng = jax.random.PRNGKey(42)
     f_batch = f if batch else lambda I: np.array([f(i) for i in I])
@@ -134,12 +131,6 @@ def tt_pro(f, d, n, M, K, k, k_gd, r, M_ANOVA=None, info={}, batch=False, log=Fa
     optim = optax.adam(1.E-4)
     opt_state = optim.init(params)
     make_step = build_make_step(optim)
-
-    if log:
-        print(f'>>> Compilation completed (time : {tpc()-time:-10.3f})')
-        print(f'>>> Start optimization...')
-
-    time = tpc()
 
     while(True):
         rng, key = jax.random.split(rng)
