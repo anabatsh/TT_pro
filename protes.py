@@ -48,8 +48,9 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
             optimal multi-index will be printed every step.
 
     Returns:
-        list: multi-index corresponding to the found optimum of the tensor (in
-        the current version only minimum is supported).
+        tuple: multi-index "n_opt" (list of the length "d") corresponding to
+        the found optimum of the tensor (in the current version only minimum is
+        supported) and the related tensor value "y_opt" (float).
 
     """
     time = tpc()
@@ -108,7 +109,7 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
         if log and (is_upd or info['M'] >= M):
             text = ''
             text += f'Evals : {info["M"]:-7.1e} | '
-            text += f'Cache : {info["M_cache"]:-7.1e} | '
+            # text += f'Cache : {info["M_cache"]:-7.1e} | '
             text += f'Opt : {y_opt:-14.7e} | '
             text += f'Time : {tpc()-time:-7.3f}'
             if log_ind:
@@ -118,7 +119,7 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
         if info['M'] >= M:
             break
 
-    return n_opt
+    return n_opt, y_opt
 
 
 def _build_generate_random_index():
