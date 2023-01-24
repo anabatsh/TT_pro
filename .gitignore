@@ -130,3 +130,4 @@ dmypy.json
 .pyre/
 
 _tmp/*
+tmp.py

@@ -43,7 +43,7 @@ def calc_control(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
     log(f'n opt ref >> {"".join([str(n) for n in n_opt_ref])}')
 
 
-def calc_func(d=100, n=25, M=1.E+5, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
+def calc_func(d=10, n=50, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
     """Perform computations for analytical multivariable functions."""
     log = Log(f'result/logs/func.txt')
 

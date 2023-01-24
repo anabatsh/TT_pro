@@ -7,7 +7,7 @@ import teneva
 from time import perf_counter as tpc
 
 
-def protes(f, d, n, M, K, k, k_gd, r, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=False, log=False, log_ind=False):
+def protes(f, d, n, M, K, k, k_gd, r, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=False, with_cache=False, is_rand_init=False, log=False, log_ind=False):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
@@ -33,10 +33,15 @@ def protes(f, d, n, M, K, k, k_gd, r, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=F
         sig (float): parameter for exponential in loss function. If is None,
             then base method with "top-k" candidates will be used.
         M_ANOVA (int): number of requests used for TT-ANOVA initial
-            approximation. If it is zero or None, then random initial TT-tensor
-            will be used.
+            approximation. If it is zero or None, then constant initial TT
+            tensor will be used.
         batch (bool): if is True, then function "f" has 2D dimensional input
             (several samples). Otherwise, the input is one-dimensional.
+        with_cache (bool): if is True, then cache for requested function values
+            will be used.
+        is_rand_init (bool): if is True and "M_ANOVA" is None, then random
+            initial approximation will be used. Otherwise, the constant
+            TT-tensor will be used.
         log (bool): if flag is set, then the information about the progress of
             the algorithm will be printed every step.
         log_ind (bool): if flag is set and "log" is True, then the current
@@ -49,12 +54,33 @@ def protes(f, d, n, M, K, k, k_gd, r, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=F
     """
     time = tpc()
     rng = jax.random.PRNGKey(42)
-    f_batch = f if batch else lambda I: np.array([f(i) for i in I])
-    M_cur = int(M_ANOVA or 0)
     n_opt = None
     y_opt = jnp.inf
 
-    params = _generate_initial(d, n, r, f_batch, M_ANOVA)
+    info = {'M': 0, 'M_cache': 0}
+    cache = {}
+
+    def f_batch(I):
+        I = np.array(I)
+        f_base = f if batch else lambda I: np.array([f(i) for i in I])
+
+        if not with_cache:
+            info['M'] += I.shape[0]
+            return jnp.array(f_base(I))
+
+        I_new = np.array([np.array(i) for i in I if tuple(i) not in cache])
+        if len(I_new):
+            Y_new = f_base(I_new)
+            for k, i in enumerate(I_new):
+                cache[tuple(i)] = Y_new[k]
+
+        info['M'] += len(I_new)
+        info['M_cache'] += len(I) - len(I_new)
+
+        return jnp.array([cache[tuple(i)] for i in I])
+
+
+    params = _generate_initial(d, n, r, f_batch, M_ANOVA, is_rand_init)
     generate_random_index = _build_generate_random_index()
     optim = optax.adam(lr)
     opt_state = optim.init(params)
@@ -65,7 +91,6 @@ def protes(f, d, n, M, K, k, k_gd, r, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=F
         key_s = jax.random.split(key, K)
         ind = generate_random_index(key_s, params)
         y = f_batch(ind)
-        M_cur += K
 
         ind_sort = np.argsort(y, kind='stable')
         ind_top = ind[ind_sort[:k], :]
@@ -80,16 +105,17 @@ def protes(f, d, n, M, K, k, k_gd, r, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=F
             y_opt = jnp.min(y)
             is_upd = True
 
-        if log and (is_upd or M_cur >= M):
+        if log and (is_upd or info['M'] >= M):
             text = ''
-            text += f'Evals : {M_cur:-7.1e} | '
+            text += f'Evals : {info["M"]:-7.1e} | '
+            text += f'Cache : {info["M_cache"]:-7.1e} | '
             text += f'Opt : {y_opt:-14.7e} | '
             text += f'Time : {tpc()-time:-7.3f}'
             if log_ind:
                 text += f' | n : {"".join([str(n) for n in n_opt])}'
             print(text)
 
-        if M_cur >= M:
+        if info['M'] >= M:
             break
 
     return n_opt
@@ -162,14 +188,22 @@ def _build_make_step(optim, sig=None):
     return make_step
 
 
-def _generate_initial(d, n, r, f=None, M=None):
+def _generate_initial(d, n, r, f=None, M=None, is_rand=True):
     """Build initial TT-tensor for probability."""
     if f is None or M is None or M < 1:
-        # Initial approximation with random TT-tensor:
-        rs = [1] + [r]*(d-1) + [1]
-        Y = []
-        for i in range(d):
-            Y.append(np.random.random(size=(rs[i], n, rs[i+1])))
+        if is_rand:
+            # Initial approximation with random TT-tensor:
+            rs = [1] + [r]*(d-1) + [1]
+            Y = []
+            for i in range(d):
+                if is_rand:
+                    Y.append(np.random.random(size=(rs[i], n, rs[i+1])))
+        else:
+            # Initial approximation with constant TT-tensor:
+            Y = teneva.tensor_const([n]*d, 1.)
+            for _ in range(r-1):
+                Y = teneva.add(Y, teneva.tensor_const([n]*d, 1.))
+            Y = teneva.mul(Y, 1./r)
 
     else:
         # Initial approximation with TT-ANOVA:
