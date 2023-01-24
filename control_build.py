@@ -37,20 +37,3 @@ def control_build(d, x_0=0.8, x_ref=0.7, t_max=1.):
         return res
 
     return f, (ode, F, time, x_0)
-
-
-def control_solve_baseline(ode, F, time, x_0, integer=True):
-    m = GEKKO(remote=False)
-    m.time = time
-    m.options.SOLVER = 1 if integer else 3
-
-    x = m.Var(value=x_0, name='x')
-    i = m.Var(value=0.0, integer=integer, lb=0, ub=1, name='i')
-
-    m.Equation(x.dt() == ode(x, i))
-    m.Obj(F(x, i))
-
-    m.options.IMODE = 6
-    m.solve(disp=False)
-
-    return [int(ii) for ii in list(i)], m.options.OBJFCNVAL

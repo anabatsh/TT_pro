@@ -7,7 +7,7 @@ import teneva
 from time import perf_counter as tpc
 
 
-def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=False, with_cache=False, is_rand_init=False, log=False, log_ind=False):
+def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=False, with_cache=False, with_qtt=False, is_rand_init=False, log=False, log_ind=False):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
@@ -39,6 +39,8 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
             (several samples). Otherwise, the input is one-dimensional.
         with_cache (bool): if is True, then cache for requested function values
             will be used.
+        with_qtt (bool): if is True, then QTT-method is used. In this case,
+            the tensor mode size "n" should be a power of "2".
         is_rand_init (bool): if is True and "M_ANOVA" is None, then random
             initial approximation will be used. Otherwise, the constant
             TT-tensor will be used.
@@ -60,6 +62,11 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
 
     info = {'M': 0, 'M_cache': 0}
     cache = {}
+
+    if with_qtt:
+        d_base = d
+        n_base = n
+        # TODO !!!
 
     def f_batch(I):
         I = np.array(I)
