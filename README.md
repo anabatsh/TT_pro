@@ -22,7 +22,7 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 4. Install dependencies:
     ```bash
-    pip install numpy teneva==0.12.8 jax optax equinox qubogen dwave-neal gekko
+    pip install numpy teneva==0.12.8 ttopt==0.5.0 jax optax equinox qubogen dwave-neal gekko
     ```
 
 5. Delete virtual environment at the end of the work (optional):
@@ -33,14 +33,11 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 ## Usage
 
-1. Run `python calc.py control`
-    > The results will be presented in the text file `result/logs/control.txt`
+1. Run `python calc.py control` to solve the optimal control problem. The results will be presented in the text file `result/logs/control.txt`.
 
-2. Run `python calc.py func`
-    > The results will be presented in the text file `result/logs/func.txt`
+2. Run `python calc.py func` to perform computations for various analytical multivariable functions. The results will be presented in the text file `result/logs/func.txt`.
 
-3. Run `python calc.py qubo`
-    > The results will be presented in the text file `result/logs/qubo.txt`
+3. Run `python calc.py qubo` to solve the QUBO problem. The results will be presented in the text file `result/logs/qubo.txt`.
 
 
 ## Authors
