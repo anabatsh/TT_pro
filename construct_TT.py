@@ -1,3 +1,6 @@
+## Code from https://github.com/G-Ryzhakov/Constructive-TT
+
+
 import numpy as np
 from time import perf_counter as tpc
 from numba import jit, njit
