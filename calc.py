@@ -25,10 +25,15 @@ from utils import folder_ensure
 
 
 def calc_control(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
-    """Solve the optimal control problem."""
-    log = Log(f'result/logs/control.txt')
+    # TODO
+    return
 
-    txt = f'--> control | '
+
+def calc_control_demo(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
+    """Solve the optimal control problem (demo)."""
+    log = Log(f'result/logs/control_demo.txt')
+
+    txt = f'--> control_demo | '
     txt += f'd={d} M={M:-7.1e} K={K} k={k} k_gd={k_gd} r={r}'
     log(txt)
 
@@ -154,6 +159,8 @@ if __name__ == '__main__':
 
     if mode == 'control':
         calc_control()
+    if mode == 'control_demo':
+        calc_control_demo()
     elif mode == 'func':
         calc_func()
     elif mode == 'qubo':
