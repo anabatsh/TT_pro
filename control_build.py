@@ -2,7 +2,7 @@ from gekko import GEKKO
 import numpy as np
 
 
-def control_build(d, x_0=0.8, x_ref=0.7, t_max=1.):
+def control_build(d, x_0=0.8, x_ref=0.7, t_max=1., constr=False):
     time = np.linspace(0, t_max, d)
 
     def ode(x, i):
@@ -14,8 +14,14 @@ def control_build(d, x_0=0.8, x_ref=0.7, t_max=1.):
         return 0.5 * ((x - x_ref) ** 2)
 
     def f(const_i):
+        const_i = list(const_i)
+        if constr:
+            const_s = "".join([str(i) for i in const_i])
+            if const_s.startswith('10') or const_s.startswith('110') or \
+                const_s.endswith('01') or const_s.endswith('011') or \
+                '010' in const_s or '0110' in const_s:
+                    return 1e+50
         try:
-            const_i = list(const_i)
 
             m = GEKKO(remote=False)
             m.time = time

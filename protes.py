@@ -5,9 +5,9 @@ import numpy as np
 import optax
 import teneva
 from time import perf_counter as tpc
+from utils import ind_tens_max_ones
 
-
-def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=False, with_cache=False, with_qtt=False, is_rand_init=False, log=False, log_ind=False):
+def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=False, with_cache=False, with_qtt=False, is_rand_init=False, log=False, log_ind=False, constr=False):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
@@ -97,7 +97,7 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
 
         return jnp.array([cache[tuple(i)] for i in I])
 
-    params = _generate_initial(d, n, r, f_batch, M_ANOVA, is_rand_init)
+    params = _generate_initial(d, n, r, f_batch, M_ANOVA, is_rand_init, constr=constr)
     generate_random_index = _build_generate_random_index()
     optim = optax.adam(lr)
     opt_state = optim.init(params)
@@ -208,8 +208,13 @@ def _build_make_step(optim, sig=None):
     return make_step
 
 
-def _generate_initial(d, n, r, f=None, M=None, is_rand=True):
+def _generate_initial(d, n, r, f=None, M=None, is_rand=True, constr=False):
     """Build initial TT-tensor for probability."""
+    if constr:
+        Y = ind_tens_max_ones(d, 3)
+        return [jnp.array(G) for G in Y]
+
+
     if f is None or M is None or M < 1:
         if is_rand:
             # Initial approximation with random TT-tensor:

@@ -15,19 +15,19 @@ from utils import Log
 from utils import folder_ensure
 
 
-def calc_control(d=100, M=1.E+6, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
+def calc_control(d=100, M=1.E+6, K=20, k=1, k_gd=50, r=5, lr=1.E-4, constr=False):
     log = Log(f'result/logs/control.txt')
 
     txt = f'--> control | '
     txt += f'd={d} M={M:-7.1e} K={K} k={k} k_gd={k_gd} r={r}'
     log(txt)
 
-    f, args = control_build(d)
+    f, args = control_build(d, constr=constr)
 
     M = int(M)
 
     def opt(f):
-        return protes(f, d, 2, M, K, k, k_gd, r, lr, batch=False, log=True)
+        return protes(f, d, 2, M, K, k, k_gd, r, lr, batch=False, log=True, constr=constr)
 
     # OWN: Find min value for the original tensor by the proposed method:
     n_opt_own, y_opt_own = opt(f)
@@ -67,7 +67,7 @@ def calc_control(d=100, M=1.E+6, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
     log(text)
 
 
-def calc_control_demo(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
+def calc_control_demo(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4, constr=False):
     """Solve the optimal control problem (demo)."""
     from control_build_demo import control_build_demo
     from control_build_demo import control_solve_baseline_demo
@@ -78,7 +78,7 @@ def calc_control_demo(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
     txt += f'd={d} M={M:-7.1e} K={K} k={k} k_gd={k_gd} r={r}'
     log(txt)
 
-    f, opts = control_build_demo(d)
+    f, opts = control_build_demo(d, constr=constr)
 
     t = tpc()
     n_opt, y_opt = protes(f, d, 2, M, K, k, k_gd, r, lr,
@@ -86,7 +86,7 @@ def calc_control_demo(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
     t = tpc() - t
 
     t_ref = tpc()
-    n_opt_ref, y_opt_ref = control_solve_baseline_demo(*opts)
+    n_opt_ref, y_opt_ref = control_solve_baseline_demo(*opts, constr=constr)
     t_ref = tpc() - t_ref
 
     log(f'\n--------')
@@ -202,7 +202,11 @@ if __name__ == '__main__':
 
     mode = sys.argv[1] if len(sys.argv) > 1 else 'func'
 
-    if mode == 'control':
+    if mode == 'control_cstrn':
+        calc_control(constr=True)
+    elif mode == 'control_demo_cstrn':
+        calc_control_demo(constr=True)
+    elif mode == 'control':
         calc_control()
     elif mode == 'control_demo':
         calc_control_demo()
