@@ -15,7 +15,7 @@ from utils import Log
 from utils import folder_ensure
 
 
-def calc_control(d=100, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
+def calc_control(d=100, M=1.E+6, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
     log = Log(f'result/logs/control.txt')
 
     txt = f'--> control | '
@@ -27,7 +27,7 @@ def calc_control(d=100, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
     M = int(M)
 
     def opt(f):
-        return protes(f, d, 2, M, K, k, k_gd, r, lr, batch=False, log=False)
+        return protes(f, d, 2, M, K, k, k_gd, r, lr, batch=False, log=True)
 
     # OWN: Find min value for the original tensor by the proposed method:
     n_opt_own, y_opt_own = opt(f)
@@ -97,7 +97,7 @@ def calc_control_demo(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4):
     log(f'n opt ref >> {"".join([str(n) for n in n_opt_ref])}')
 
 
-def calc_func(d=100, n=50, M=1.E+3, K=20, k=5, k_gd=50, r=5, lr=1.E-4):
+def calc_func(d=100, n=64, M=1.E+3, K=20, k=5, k_gd=50, r=5, lr=1.E-4):
     """Perform computations for analytical multivariable functions."""
     log = Log(f'result/logs/func.txt')
 
@@ -108,7 +108,8 @@ def calc_func(d=100, n=50, M=1.E+3, K=20, k=5, k_gd=50, r=5, lr=1.E-4):
     M = int(M)
 
     def opt(f):
-        return protes(f, d, n, M, K, k, k_gd, r, lr, batch=True, log=False)
+        return protes(f, d, n, M, K, k, k_gd, r, lr, batch=True,
+            with_qtt=True, log=False)
 
     funcs = teneva.func_demo_all(d, only_with_min=True, only_with_min_x=True)
 

@@ -66,11 +66,21 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
     if with_qtt:
         d_base = d
         n_base = n
-        # TODO !!!
+        q = int(np.log2(n))
+        if 2**q != n:
+            raise ValueError('Tensor mode size should be power of 2 for QTT')
+        d = d * q
+        n = 2
 
     def f_batch(I):
         I = np.array(I)
-        f_base = f if batch else lambda I: np.array([f(i) for i in I])
+
+        f_base_real = f if batch else lambda I: np.array([f(i) for i in I])
+
+        def f_base(I):
+            if with_qtt:
+                I = teneva.ind_qtt_to_tt(I, q)
+            return f_base_real(I)
 
         if not with_cache:
             info['M'] += I.shape[0]
@@ -86,7 +96,6 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
         info['M_cache'] += len(I) - len(I_new)
 
         return jnp.array([cache[tuple(i)] for i in I])
-
 
     params = _generate_initial(d, n, r, f_batch, M_ANOVA, is_rand_init)
     generate_random_index = _build_generate_random_index()
@@ -125,6 +134,9 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
 
         if info['M'] >= M:
             break
+
+    if with_qtt:
+        n_opt = teneva.ind_qtt_to_tt(n_opt, q)
 
     return n_opt, y_opt
 
