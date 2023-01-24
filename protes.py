@@ -7,7 +7,7 @@ import teneva
 from time import perf_counter as tpc
 
 
-def protes(f, d, n, M, K, k, k_gd, r, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=False, with_cache=False, is_rand_init=False, log=False, log_ind=False):
+def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=None, batch=False, with_cache=False, is_rand_init=False, log=False, log_ind=False):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
