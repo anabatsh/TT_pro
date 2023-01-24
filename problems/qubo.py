@@ -10,12 +10,12 @@ def qubo_build_function(Q):
     return func
 
 
-def qubo_build_matrix(d, prob_con=0.5, seed=0):
+def qubo_build_matrix(d, prob_con=0.3, seed=42):
     graph = nx.fast_gnp_random_graph(n=d, p=prob_con, seed=seed)
     edges = np.array(list([list(e) for e in graph.edges]))
     n_nodes = len(np.unique(np.array(edges).flatten()))
     g = qubogen.Graph(edges=edges, n_nodes=n_nodes)
-    Q = qubogen.qubo_max_cut(g)
+    Q = qubogen.qubo_mvc(g) # qubo_max_cut(g)
     return Q
 
 
