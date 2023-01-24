@@ -1,6 +1,32 @@
 import jax.numpy as jnp
 import numpy as np
 import os
+from construct_TT import tens
+
+def gen_func_pair(num_ones=3):
+    def f0(x):
+        if x == 0 or x == num_ones:
+            return 0
+        
+    def f1(x):
+        return min(num_ones, x + 1)
+    
+    return [f0, f1]
+
+def gen_func_pair_last(num_ones=3):
+    def f0(x):
+        if x == 0 or x == num_ones:
+            return 1
+        
+    def f1(x):
+        if x >= num_ones - 1:
+            return 1
+    
+    return [f0, f1]
+
+def ind_tens_max_ones(d, max_ones):
+    funcs = [gen_func_pair(num_ones)]*(d-1) +  [gen_func_pair_last(num_ones)]
+    return tens(funcs).cores
 
 
 class Log:
