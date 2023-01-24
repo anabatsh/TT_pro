@@ -1,0 +1,12 @@
+--> FUNC | d=100 n=10 M=1.0e+03 K=20 k=5 k_gd=50 r=5
+Ackley       | PROTES:  2.12e+01 | TTOpt:  2.15e+01 | Optima-TT:  2.15e+01 | 
+Alpine       | PROTES:  2.82e+02 | TTOpt:  3.41e+02 | Optima-TT:  3.84e+02 | 
+Dixon        | PROTES:  3.19e+07 | TTOpt:  4.85e+07 | Optima-TT:  1.45e+08 | 
+Exponential  | PROTES: -2.54e-07 | TTOpt: -2.89e-08 | Optima-TT: -1.50e-06 | 
+Grienwank    | PROTES:  2.73e+03 | TTOpt:  3.24e+03 | Optima-TT:  6.71e+03 | 
+Michalewicz  | PROTES: -1.71e+01 | TTOpt: -1.21e+01 | Optima-TT: -3.29e+01 | 
+Qing         | PROTES:  9.14e+11 | TTOpt:  1.30e+12 | Optima-TT:  3.97e+12 | 
+Rastrigin    | PROTES:  1.67e+03 | TTOpt:  1.83e+03 | Optima-TT:  2.43e+03 | 
+Rosenbrock   | PROTES:  3.63e+04 | TTOpt:  6.63e+04 | Optima-TT:  7.83e+04 | 
+Schaffer     | PROTES:  4.45e+01 | TTOpt:  4.67e+01 | Optima-TT:  4.94e+01 | 
+Schwefel     | PROTES:  3.57e+04 | TTOpt:  3.75e+04 | Optima-TT:  5.26e+04 | 
