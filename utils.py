@@ -24,7 +24,7 @@ def gen_func_pair_last(num_ones=3):
     
     return [f0, f1]
 
-def ind_tens_max_ones(d, max_ones):
+def ind_tens_max_ones(d, num_ones):
     funcs = [gen_func_pair(num_ones)]*(d-1) +  [gen_func_pair_last(num_ones)]
     return tens(funcs).cores
 
