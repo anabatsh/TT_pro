@@ -20,7 +20,7 @@ from utils import Log
 from utils import folder_ensure
 
 
-def calc_control(d_list=[25, 50, 100], M=int(1.E+3), constr=False):
+def calc_control(d_list=[25, 50, 100], M=int(1.E+4), constr=False):
     """Perform computations for optimal control problem."""
     nm = 'CONTROL' + ('_CONSTR' if constr else '')
     log = Log(f'result/logs/control{"_constr" if constr else ""}.txt')
@@ -76,7 +76,7 @@ def calc_control(d_list=[25, 50, 100], M=int(1.E+3), constr=False):
         log(text)
 
 
-def calc_func(d=10, n=50, M=2.E+5, M_ng=1.E+3, with_shift=False):
+def calc_func(d=7, n=16, M=1.E+4, M_ng=1.E+4, with_shift=True):
     """Perform computations for analytical multivariable functions."""
     M = int(M)
     M_ng = int(M_ng or M)
@@ -85,16 +85,15 @@ def calc_func(d=10, n=50, M=2.E+5, M_ng=1.E+3, with_shift=False):
     log = Log(f'result/logs/func.txt')
     log(f'--> {nm} | d={d} | n={n} | M={M:-7.1e} | Mng={M_ng:-7.1e}')
 
-    funcs = teneva.func_demo_all(d, only_with_min=True, only_with_min_x=True)
-    for func in funcs:
+    for func in teneva.func_demo_all(d, with_piston=True):
         # Set the grid:
         func.set_grid(n, kind='uni')
 
         # Translate the function limits to ensure correct competition:
         if with_shift:
-            shift = 0.32
-            a_new = func.x_min - (func.b-func.a) * shift
-            b_new = func.x_min + (func.b-func.a) * (1. - shift)
+            shift = np.random.randn(d) / 10
+            a_new = func.a - (func.b-func.a) * shift
+            b_new = func.b + (func.b-func.a) * shift
             func.set_lim(a_new, b_new)
 
         # Target function for optimization:
@@ -146,7 +145,7 @@ def calc_func(d=10, n=50, M=2.E+5, M_ng=1.E+3, with_shift=False):
         log(text)
 
 
-def calc_knapsack(M=1.E+2, M_ng=1.E+2):
+def calc_knapsack(M=1.E+4, M_ng=1.E+4):
     """Perform computations for concrete Knapsack problem."""
     M = int(M)
     M_ng = int(M_ng or M)
@@ -205,7 +204,7 @@ def calc_knapsack(M=1.E+2, M_ng=1.E+2):
         log(text)
 
 
-def calc_qubo(d=5, M=1.E+2, M_ng=1.E+4):
+def calc_qubo(d=50, M=1.E+4, M_ng=1.E+4):
     """Perform computations for QUBO problem."""
     M = int(M)
     M_ng = int(M_ng or M)

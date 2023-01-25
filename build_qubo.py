@@ -14,7 +14,6 @@ def build_qubo(d, task=1, prob_con=0.5, seed=42):
         a = np.random.random(d)
         b = np.mean(a)
         Q = qubogen.qubo_qkp(v, a, b)
-        print(Q)
     elif task == 2:   # Max-Cut Problem
         Q = qubogen.qubo_max_cut(g)
     elif task == 3:   # Minimum Vertex Cover Problem (MVC)
