@@ -22,7 +22,7 @@ def build_control(d, x_0=0.8, x_ref=0.7, t_max=1., constr=False):
             if const_s.startswith('10') or const_s.startswith('110') or \
                 const_s.endswith('01') or const_s.endswith('011') or \
                 '010' in const_s or '0110' in const_s:
-                    return 1e+50
+                    return 1e+42
 
         try:
             m = GEKKO(remote=False)
