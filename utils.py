@@ -61,7 +61,7 @@ def get_many(Y, I):
 def ind_tens_max_ones(d, num_ones, r):
     funcs = [gen_func_pair(num_ones)]*(d-1) +  [gen_func_pair_last(num_ones)]
     cores = tens(funcs).cores
-    update_to_rank_r(cores, r, noise=1e-8, inplace=True)
+    update_to_rank_r(cores, r, noise=0, inplace=True) # 1e-8
     cores = teneva.orthogonalize(cores, k=0)
     return cores
 

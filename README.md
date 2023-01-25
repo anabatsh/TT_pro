@@ -40,9 +40,11 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 1. Run `python calc.py control` to solve the optimal control problem. The results will be presented in the text file `result/logs/control.txt`.
 
-2. Run `python calc.py func` to perform computations for various analytical multivariable functions. The results will be presented in the text file `result/logs/func.txt`.
+2. Run `python calc.py control_constr` to solve the optimal control problem with constraints. The results will be presented in the text file `result/logs/control_constr.txt`.
 
-3. Run `python calc.py qubo` to solve the QUBO problem. The results will be presented in the text file `result/logs/qubo.txt`.
+3. Run `python calc.py func` to perform computations for various analytical multivariable functions. The results will be presented in the text file `result/logs/func.txt`.
+
+4. Run `python calc.py qubo` to solve the QUBO problem. The results will be presented in the text file `result/logs/qubo.txt`.
 
 
 ## Authors

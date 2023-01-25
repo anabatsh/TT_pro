@@ -16,67 +16,65 @@ from utils import Log
 from utils import folder_ensure
 
 
-def calc_control(d=100, M=1.E+3, M_ng=1.E+3, constr=False):
+def calc_control(d_list=[25, 50, 100], M=int(1.E+3), constr=False):
     """Perform computations for optimal control problem."""
-    M = int(M)
-    M_ng = int(M_ng or M)
-
     nm = 'CONTROL' + ('_CONSTR' if constr else '')
     log = Log(f'result/logs/control{"_constr" if constr else ""}.txt')
-    log(f'--> {nm} | d={d} | M={M:-7.1e} | Mng={M_ng:-7.1e}')
+    log(f'--> {nm} | d={d_list} | M={M:-7.1e}')
 
-    f, args = build_control(d, constr=constr)
-    f_batch = lambda I: np.array([f(i) for i in I])
+    for d in d_list:
+        f, args = build_control(d, constr=constr)
+        f_batch = lambda I: np.array([f(i) for i in I])
 
-    # OWN: Find min value for the original tensor by the proposed method:
-    n_opt_own, y_opt_own = protes(f, d, 2, M, constr=constr,
-        log=True, log_ind=True)
+        # OWN: Find min value for the original tensor by the proposed method:
+        n_opt_own, y_opt_own = protes(f, d, 2, M, constr=constr,
+            log=True, log_ind=True)
 
-    # BS1: Find min value the original tensor by TTOpt:
-    n_opt_bs1, y_opt_bs1 = bs_ttopt(f_batch, [2]*d, M)
-    print(f'BS1 : {y_opt_bs1:-9.2e}')
+        # BS1: Find min value the original tensor by TTOpt:
+        n_opt_bs1, y_opt_bs1 = bs_ttopt(f_batch, [2]*d, M)
+        print(f'BS1 : {y_opt_bs1:-9.2e}')
 
-    # BS2: Find min value for TT-tensor by Optima-TT:
-    n_opt_bs2, y_opt_bs2 = bs_optima_tt(f_batch, [2]*d, M)
-    print(f'BS2 : {y_opt_bs2:-9.2e}')
+        # BS2: Find min value for TT-tensor by Optima-TT:
+        n_opt_bs2, y_opt_bs2 = bs_optima_tt(f_batch, [2]*d, M)
+        print(f'BS2 : {y_opt_bs2:-9.2e}')
 
-    # BS3 OnePlusOne method from nevergrad:
-    n_opt_bs3, y_opt_bs3 = bs_nevergrad(f, [2]*d, M_ng, 'OnePlusOne')
-    print(f'BS3 : {y_opt_bs3:-9.2e}')
+        # BS3 OnePlusOne method from nevergrad:
+        n_opt_bs3, y_opt_bs3 = bs_nevergrad(f, [2]*d, M, 'OnePlusOne')
+        print(f'BS3 : {y_opt_bs3:-9.2e}')
 
-    # BS4 PSO method from nevergrad:
-    n_opt_bs4, y_opt_bs4 = bs_nevergrad(f, [2]*d, M_ng, 'PSO')
-    print(f'BS4 : {y_opt_bs4:-9.2e}')
+        # BS4 PSO method from nevergrad:
+        n_opt_bs4, y_opt_bs4 = bs_nevergrad(f, [2]*d, M, 'PSO')
+        print(f'BS4 : {y_opt_bs4:-9.2e}')
 
-    # BS5 PSO method from nevergrad:
-    n_opt_bs5, y_opt_bs5 = bs_nevergrad(f, [2]*d, M_ng, 'NoisyBandit')
-    print(f'BS5 : {y_opt_bs5:-9.2e}')
+        # BS5 PSO method from nevergrad:
+        n_opt_bs5, y_opt_bs5 = bs_nevergrad(f, [2]*d, M, 'NoisyBandit')
+        print(f'BS5 : {y_opt_bs5:-9.2e}')
 
-    # BS6 PSO method from nevergrad:
-    n_opt_bs6, y_opt_bs6 = bs_nevergrad(f, [2]*d, M_ng, 'SPSA')
-    print(f'BS6 : {y_opt_bs6:-9.2e}')
+        # BS6 PSO method from nevergrad:
+        n_opt_bs6, y_opt_bs6 = bs_nevergrad(f, [2]*d, M, 'SPSA')
+        print(f'BS6 : {y_opt_bs6:-9.2e}')
 
-    # BS7 PSO method from nevergrad:
-    n_opt_bs7, y_opt_bs7 = bs_nevergrad(f, [2]*d, M_ng, 'Portfolio')
-    print(f'BS7 : {y_opt_bs7:-9.2e}')
+        # BS7 PSO method from nevergrad:
+        n_opt_bs7, y_opt_bs7 = bs_nevergrad(f, [2]*d, M, 'Portfolio')
+        print(f'BS7 : {y_opt_bs7:-9.2e}')
 
-    # BS8: Find min value the original tensor by GEKKO:
-    n_opt_bs8, y_opt_bs8 = bs_control_gekko(*args)
-    print(f'BS8 : {y_opt_bs8:-9.2e}')
+        # BS8: Find min value the original tensor by GEKKO:
+        n_opt_bs8, y_opt_bs8 = bs_control_gekko(*args, constr=constr)
+        print(f'BS8 : {y_opt_bs8:-9.2e}')
 
-    # Present the result:
-    text = ''
-    text += ' ODE-1 | '
-    text += f'OWN {y_opt_own:-9.2e} | ' #
-    text += f'BS1 {y_opt_bs1:-9.2e} | ' # TTOpt
-    text += f'BS2 {y_opt_bs2:-9.2e} | ' # Optima-TT
-    text += f'BS3 {y_opt_bs3:-9.2e} | ' # nevergrad OnePlusOne
-    text += f'BS4 {y_opt_bs4:-9.2e} | ' # nevergrad PSO
-    text += f'BS5 {y_opt_bs5:-9.2e} | ' # nevergrad NoisyBandit
-    text += f'BS6 {y_opt_bs6:-9.2e} | ' # nevergrad SPSA
-    text += f'BS7 {y_opt_bs7:-9.2e} | ' # nevergrad Portfolio
-    text += f'BS8 {y_opt_bs8:-9.2e} | ' # GEKKO Base method
-    log(text)
+        # Present the result:
+        text = ''
+        text += f' ODE-{d}D | '
+        text += f'OWN {y_opt_own:-9.2e} | ' #
+        text += f'BS1 {y_opt_bs1:-9.2e} | ' # TTOpt
+        text += f'BS2 {y_opt_bs2:-9.2e} | ' # Optima-TT
+        text += f'BS3 {y_opt_bs3:-9.2e} | ' # nevergrad OnePlusOne
+        text += f'BS4 {y_opt_bs4:-9.2e} | ' # nevergrad PSO
+        text += f'BS5 {y_opt_bs5:-9.2e} | ' # nevergrad NoisyBandit
+        text += f'BS6 {y_opt_bs6:-9.2e} | ' # nevergrad SPSA
+        text += f'BS7 {y_opt_bs7:-9.2e} | ' # nevergrad Portfolio
+        text += f'BS8 {y_opt_bs8:-9.2e} | ' # GEKKO Base method
+        log(text)
 
 
 def calc_func(d=10, n=50, M=2.E+5, M_ng=1.E+3, with_shift=False):
@@ -149,7 +147,7 @@ def calc_func(d=10, n=50, M=2.E+5, M_ng=1.E+3, with_shift=False):
         log(text)
 
 
-def calc_qubo(d=100, M=1.E+4, M_ng=1.E+4):
+def calc_qubo(d=5, M=1.E+2, M_ng=1.E+4):
     """Perform computations for QUBO problem."""
     M = int(M)
     M_ng = int(M_ng or M)
@@ -218,8 +216,8 @@ if __name__ == '__main__':
 
     if mode == 'control':
         calc_control()
-    elif mode == 'control_cstrn':
-        calc_control(M=1.E+4, constr=True)
+    elif mode == 'control_constr':
+        calc_control(constr=True)
     elif mode == 'func':
         calc_func()
     elif mode == 'qubo':

@@ -9,13 +9,16 @@ def build_qubo(d, task=1, prob_con=0.5, seed=42):
     n_nodes = len(np.unique(np.array(edges).flatten()))
     g = qubogen.Graph(edges=edges, n_nodes=n_nodes)
 
-    if task == 1:
+    if task == 1:     # Quadratic Knapsack Problem
+        v = np.diag(np.random.random(d)) / 3.
+        a = np.random.random(d)
+        b = np.mean(a)
+        Q = qubogen.qubo_qkp(v, a, b)
+        print(Q)
+    elif task == 2:   # Max-Cut Problem
         Q = qubogen.qubo_max_cut(g)
-    elif task == 2:
+    elif task == 3:   # Minimum Vertex Cover Problem (MVC)
         Q = qubogen.qubo_mvc(g)
-    elif task == 3:
-        Q = qubogen.qubo_set_pack(g)
-
     def func(I):
         return ((I @ Q) * I).sum(axis=1)
 

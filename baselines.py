@@ -4,7 +4,7 @@ import teneva
 from ttopt import TTOpt
 
 
-def bs_control_gekko(ode, F, time, x_0, integer=True):
+def bs_control_gekko(ode, F, time, x_0, constr=False, integer=True):
     m = GEKKO(remote=False)
     m.time = time
     m.options.SOLVER = 1 if integer else 3
@@ -13,6 +13,17 @@ def bs_control_gekko(ode, F, time, x_0, integer=True):
     i = m.Var(value=0.0, integer=integer, lb=0, ub=1, name='i')
 
     m.Equation(x.dt() == ode(x, i))
+
+    if constr:
+        a = m.Var()
+        b = m.Var()
+        c = m.Var()
+        m.delay(i, a, 1)
+        m.delay(i, b, 2)
+        m.delay(i, c, 3)
+        m.Equation(a - b - i <= 0)
+        m.Equation(a - c - i <= 0)
+
     m.Obj(F(x, i))
 
     m.options.IMODE = 6
