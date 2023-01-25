@@ -44,7 +44,9 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 3. Run `python calc.py func` to perform computations for various analytical multivariable functions. The results will be presented in the text file `result/logs/func.txt`.
 
-4. Run `python calc.py qubo` to solve the QUBO problem. The results will be presented in the text file `result/logs/qubo.txt`.
+4. Run `python calc.py knapsack` to perform computations for special knapsack problem. The results will be presented in the text file `result/logs/knapsack.txt`.
+
+5. Run `python calc.py qubo` to solve the QUBO problem. The results will be presented in the text file `result/logs/qubo.txt`.
 
 
 ## Authors
