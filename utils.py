@@ -2,6 +2,7 @@ import jax.numpy as jnp
 import numpy as np
 import os
 from construct_TT import tens
+import teneva
 
 def gen_func_pair(num_ones=3):
     def f0(x):
@@ -26,7 +27,9 @@ def gen_func_pair_last(num_ones=3):
 
 def ind_tens_max_ones(d, num_ones):
     funcs = [gen_func_pair(num_ones)]*(d-1) +  [gen_func_pair_last(num_ones)]
-    return tens(funcs).cores
+    cores = tens(funcs).cores
+    cores = teneva.orthogonalize(cores, k=0)
+    return cores
 
 
 class Log:
