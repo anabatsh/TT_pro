@@ -1,3 +1,6 @@
+import sklearn
+
+
 import jax.numpy as jnp
 import numpy as np
 import sys
@@ -11,6 +14,7 @@ from baselines import bs_nevergrad
 from baselines import bs_optima_tt
 from baselines import bs_ttopt
 from build_control import build_control
+from build_knapsack import build_knapsack
 from build_qubo import build_qubo
 from utils import Log
 from utils import folder_ensure
@@ -58,10 +62,6 @@ def calc_control(d_list=[25, 50, 100], M=int(1.E+3), constr=False):
         n_opt_bs7, y_opt_bs7 = bs_nevergrad(f, [2]*d, M, 'Portfolio')
         print(f'BS7 : {y_opt_bs7:-9.2e}')
 
-        # BS8: Find min value the original tensor by GEKKO:
-        n_opt_bs8, y_opt_bs8 = bs_control_gekko(*args, constr=constr)
-        print(f'BS8 : {y_opt_bs8:-9.2e}')
-
         # Present the result:
         text = ''
         text += f' ODE-{d}D | '
@@ -73,7 +73,6 @@ def calc_control(d_list=[25, 50, 100], M=int(1.E+3), constr=False):
         text += f'BS5 {y_opt_bs5:-9.2e} | ' # nevergrad NoisyBandit
         text += f'BS6 {y_opt_bs6:-9.2e} | ' # nevergrad SPSA
         text += f'BS7 {y_opt_bs7:-9.2e} | ' # nevergrad Portfolio
-        text += f'BS8 {y_opt_bs8:-9.2e} | ' # GEKKO Base method
         log(text)
 
 
