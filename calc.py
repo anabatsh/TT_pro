@@ -97,7 +97,7 @@ def calc_control_demo(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4, constr=F
     log(f'n opt ref >> {"".join([str(n) for n in n_opt_ref])}')
 
 
-def calc_func(d=10, n=50, M=2.E+5, K=20, k=1, k_gd=10, r=5, lr=1.E-4, sig=None, with_qtt=False):
+def calc_func(d=10, n=50, M=2.E+5, K=20, k=1, k_gd=10, r=5, lr=1.E-4, sig=None, with_qtt=False, is_rand_init=True, log=True):
     """Perform computations for analytical multivariable functions."""
     log = Log(f'result/logs/func.txt')
 
@@ -109,7 +109,7 @@ def calc_func(d=10, n=50, M=2.E+5, K=20, k=1, k_gd=10, r=5, lr=1.E-4, sig=None, 
 
     def opt(f):
         return protes(f, d, n, M, K, k, k_gd, r, lr, sig=sig, batch=True,
-            with_qtt=with_qtt, log=False)
+            with_qtt=with_qtt, is_rand_init=is_rand_init, log=log)
 
     funcs = teneva.func_demo_all(d, only_with_min=True, only_with_min_x=True)
 
