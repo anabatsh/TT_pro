@@ -25,6 +25,11 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
     pip install numpy teneva==0.12.8 ttopt==0.5.0 jax optax equinox qubogen dwave-neal gekko nevergrad
     ```
 
+4a. Clean temporary dir after runs:
+    ```bash
+    find /tmp -type d   -maxdepth 1  -iname "*model*"  -exec rm -fr {} \;
+    ```
+
 5. Delete virtual environment at the end of the work (optional):
     ```bash
     conda activate && conda remove --name tt_pro --all -y
