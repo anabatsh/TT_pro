@@ -114,7 +114,8 @@ def protes(f, d, n, M, K=20, k=1, k_gd=50, r=5, lr=1.E-4, sig=1.E-1, M_ANOVA=Non
 
         for _ in range(k_gd):
             loss_val, params, opt_state = make_step(params, opt_state,
-                ind, y, y_opt if y_opt < 1.E+10 else 0.)
+                ind_top if sig is None else ind, y,
+                y_opt if y_opt < 1.E+10 else 0.)
 
         is_upd = False
         if n_opt is None or jnp.min(y) < y_opt:
@@ -189,18 +190,18 @@ def _build_make_step(optim, sig=None):
         return jnp.mean(l)
 
     @jax.jit
-    def loss_new(z, ind, val, y_opt):
+    def loss_new(z, ind_all, val, y_opt):
         f = jnp.exp(-1./sig * (val-jnp.min(val)))
         #f = jnp.exp(-1./sig * (val-y_opt))
-        p = compute_likelihood(ind, z)
+        p = compute_likelihood(ind_all, z)
         l = f * p
         return -jnp.mean(l)
 
     loss = loss_new if sig else loss_old
 
     @jax.jit
-    def make_step(params, opt_state, ind_top, val, y_opt):
-        loss_val, grads = jax.value_and_grad(loss)(params, ind_top, val, y_opt)
+    def make_step(params, opt_state, ind, val, y_opt):
+        loss_val, grads = jax.value_and_grad(loss)(params, ind, val, y_opt)
         updates, opt_state = optim.update(grads, opt_state)
         params = eqx.apply_updates(params, updates)
         return loss_val, params, opt_state
