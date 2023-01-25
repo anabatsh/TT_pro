@@ -1,2 +1,11 @@
---> FUNC | d=5 n=64 M=1.0e+03 K=20 k=5 k_gd=50 r=5
-Ackley       | OWN  1.01e+01 | BS1  1.34e+01 | BS2  1.10e+01 | BS3  6.41e+00 | BS4  2.60e+00 | BS5  1.90e+01 | BS6  1.98e+01 | BS7  1.72e+00 | 
+--> FUNC | d=10 | n=50 | M=2.0e+05 | Mng=1.0e+03
+Ackley       | OWN  4.61e+00 | BS1  4.61e+00 | BS2  6.61e+00 | BS3  4.61e+00 | BS4  7.07e+00 | BS5  2.09e+01 | BS6  4.61e+00 | BS7  4.61e+00 | 
+Alpine       | OWN  2.10e-01 | BS1  2.10e-01 | BS2  2.10e-01 | BS3  2.10e-01 | BS4  4.83e+00 | BS5  2.14e+01 | BS6  2.10e-01 | BS7  1.58e+00 | 
+Dixon        | OWN  1.42e+00 | BS1  1.13e+00 | BS2  1.42e+00 | BS3  1.69e+00 | BS4  1.12e+02 | BS5  1.38e+05 | BS6  1.42e+00 | BS7  1.74e+00 | 
+Exponential  | OWN -9.98e-01 | BS1 -9.98e-01 | BS2 -9.98e-01 | BS3 -9.98e-01 | BS4 -9.95e-01 | BS5 -3.27e-01 | BS6 -9.98e-01 | BS7 -9.98e-01 | 
+Grienwank    | OWN  1.38e+00 | BS1  1.38e+00 | BS2  1.38e+00 | BS3  1.38e+00 | BS4  1.67e+00 | BS5  1.70e+02 | BS6  1.38e+00 | BS7  1.38e+00 | 
+Qing         | OWN  3.85e+02 | BS1  3.85e+02 | BS2  3.85e+02 | BS3  8.96e+07 | BS4  3.85e+02 | BS5  5.05e+10 | BS6  2.50e+11 | BS7  7.72e+07 | 
+Rastrigin    | OWN  1.58e+01 | BS1  1.58e+01 | BS2  1.58e+01 | BS3  2.09e+01 | BS4  4.20e+01 | BS5  1.35e+02 | BS6  2.09e+01 | BS7  4.21e+01 | 
+Rosenbrock   | OWN  7.52e+00 | BS1  2.94e+00 | BS2  1.74e+00 | BS3  9.90e+00 | BS4  1.16e+01 | BS5  8.37e+02 | BS6  9.71e+00 | BS7  9.90e+00 | 
+Schaffer     | OWN  5.91e-01 | BS1  5.91e-01 | BS2  5.91e-01 | BS3  6.02e-01 | BS4  2.60e+00 | BS5  4.19e+00 | BS6  6.39e-01 | BS7  2.09e+00 | 
+Schwefel     | OWN  8.53e+00 | BS1  8.53e+00 | BS2  8.53e+00 | BS3  2.15e+03 | BS4  1.61e+03 | BS5  3.14e+03 | BS6  4.18e+03 | BS7  1.07e+03 | 

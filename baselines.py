@@ -39,22 +39,22 @@ def bs_nevergrad(f, N, M, method='PSO'):
     return n_opt, y_opt
 
 
-def bs_optima_tt(f, N, M):
+def bs_optima_tt(f, N, M, batch=True):
     Y = teneva.tensor_rand(N, r=1)
     Y = teneva.cross(f, Y, e=1.E-16, m=M, dr_max=2)
     Y = teneva.truncate(Y, e=1.E-16)
 
     n_opt = teneva.optima_tt(Y)[0]
-    y_opt = f(n_opt)
+    y_opt = f(n_opt.reshape(1, -1))[0] if batch else f(n_opt)
 
     return n_opt, y_opt
 
 
-def bs_ttopt(f, N, M):
+def bs_ttopt(f, N, M, batch=True):
     tto = TTOpt(f, d=len(N), n=N, evals=M, is_func=False)
     tto.minimize()
 
     n_opt = tto.i_min
-    y_opt = f(n_opt)
+    y_opt = f(n_opt.reshape(1, -1))[0] if batch else f(n_opt)
 
     return n_opt, y_opt

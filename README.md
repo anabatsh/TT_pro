@@ -22,12 +22,12 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 4. Install dependencies:
     ```bash
-    pip install numpy teneva==0.12.8 ttopt==0.5.0 jax optax equinox qubogen dwave-neal gekko nevergrad
+    pip install numpy teneva==0.12.8 ttopt==0.5.0 jax optax equinox qubogen gekko nevergrad
     ```
 
 5. Clean temporary dir after runs:
     ```bash
-    find /tmp -type d   -maxdepth 1  -iname "*model*"  -exec rm -fr {} \;
+    find /tmp -type d -maxdepth 1 -iname "*model*" -exec rm -fr {} \;
     ```
 
 6. Delete virtual environment at the end of the work (optional):
