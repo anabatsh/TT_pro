@@ -211,7 +211,7 @@ if __name__ == '__main__':
     mode = sys.argv[1] if len(sys.argv) > 1 else 'func'
 
     if mode == 'control_cstrn':
-        calc_control(constr=True)
+        calc_control(constr=True, M=1e4)
     elif mode == 'control_demo_cstrn':
         calc_control_demo(constr=True)
     elif mode == 'control':

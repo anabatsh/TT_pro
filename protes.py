@@ -212,7 +212,7 @@ def _build_make_step(optim, sig=None):
 def _generate_initial(d, n, r, f=None, M=None, is_rand=True, constr=False):
     """Build initial TT-tensor for probability."""
     if constr:
-        Y = ind_tens_max_ones(d, 3)
+        Y = ind_tens_max_ones(d, 3, r)
         return [jnp.array(G) for G in Y]
 
 
