@@ -97,7 +97,7 @@ def calc_control_demo(d=20, M=1.E+3, K=20, k=1, k_gd=50, r=5, lr=1.E-4, constr=F
     log(f'n opt ref >> {"".join([str(n) for n in n_opt_ref])}')
 
 
-def calc_func(d=10, n=50, M=2.E+5, K=20, k=1, k_gd=10, r=5, lr=1.E-4, sig=None, with_qtt=False, is_rand_init=True, log=True):
+def calc_func(d=10, n=50, M=2.E+5, K=20, k=1, k_gd=10, r=5, lr=1.E-4, sig=None, with_qtt=False, is_rand_init=True, with_shift=False, log=True):
     """Perform computations for analytical multivariable functions."""
     log = Log(f'result/logs/func.txt')
 
@@ -118,10 +118,11 @@ def calc_func(d=10, n=50, M=2.E+5, K=20, k=1, k_gd=10, r=5, lr=1.E-4, sig=None, 
         func.set_grid(n, kind='uni')
 
         # Translate the function limits to ensure correct competition:
-        shift = 0.32
-        a_new = func.x_min - (func.b-func.a) * shift
-        b_new = func.x_min + (func.b-func.a) * (1. - shift)
-        func.set_lim(a_new, b_new)
+        if with_shift:
+            shift = 0.32
+            a_new = func.x_min - (func.b-func.a) * shift
+            b_new = func.x_min + (func.b-func.a) * (1. - shift)
+            func.set_lim(a_new, b_new)
 
         # Target function for optimization:
         f = func.get_f_ind
@@ -131,25 +132,32 @@ def calc_func(d=10, n=50, M=2.E+5, K=20, k=1, k_gd=10, r=5, lr=1.E-4, sig=None, 
 
         # BS1: Find min value the original tensor by TTOpt:
         n_opt_bs1, y_opt_bs1 = bs_ttopt(f, func.n, M)
+        print(f'BS1 : {y_opt_bs1:-9.2e}')
 
         # BS2: Find min value for TT-tensor by Optima-TT
         # (we build the TT-approximation by the TT-CROSS method):
         n_opt_bs2, y_opt_bs2 = bs_optima_tt(f, func.n, M)
+        print(f'BS2 : {y_opt_bs2:-9.2e}')
 
         # BS3 OnePlusOne method from nevergrad:
         n_opt_bs3, y_opt_bs3 = bs_nevergrad(f, func.n, M, 'OnePlusOne')
+        print(f'BS3 : {y_opt_bs3:-9.2e}')
 
         # BS4 PSO method from nevergrad:
         n_opt_bs4, y_opt_bs4 = bs_nevergrad(f, func.n, M, 'PSO')
+        print(f'BS4 : {y_opt_bs4:-9.2e}')
 
         # BS5 PSO method from nevergrad:
         n_opt_bs5, y_opt_bs5 = bs_nevergrad(f, func.n, M, 'NoisyBandit')
+        print(f'BS5 : {y_opt_bs5:-9.2e}')
 
         # BS6 PSO method from nevergrad:
         n_opt_bs6, y_opt_bs6 = bs_nevergrad(f, func.n, M, 'SPSA')
+        print(f'BS6 : {y_opt_bs6:-9.2e}')
 
         # BS7 PSO method from nevergrad:
         n_opt_bs7, y_opt_bs7 = bs_nevergrad(f, func.n, M, 'Portfolio')
+        print(f'BS7 : {y_opt_bs7:-9.2e}')
 
         # Present the result:
         text = ''
