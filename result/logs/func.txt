@@ -1,13 +1,11 @@
 --> FUNC | d=7 | n=16 | M=1.0e+04 | Mng=1.0e+04
 Ackley       | OWN  9.10e+00 | BS1  9.10e+00 | BS2  9.10e+00 | BS3  9.10e+00 | BS4  9.10e+00 | BS5  1.99e+01 | BS6  9.10e+00 | BS7  9.10e+00 | 
 Alpine       | OWN  1.73e+00 | BS1  1.73e+00 | BS2  1.73e+00 | BS3  2.66e+00 | BS4  1.73e+00 | BS5  5.44e+00 | BS6  2.40e+00 | BS7  1.93e+00 | 
-Dixon        | OWN  9.45e+00 | BS1  3.28e+00 | BS2  3.28e+00 | BS3  3.28e+00 | BS4  3.28e+00 | BS5  3.96e+04 | BS6  3.28e+00 | BS7  3.28e+00 | 
-Exponential  | OWN -9.81e-01 | BS1 -9.81e-01 | BS2 -9.81e-01 | BS3 -9.81e-01 | BS4 -9.81e-01 | BS5 -6.68e-01 | BS6 -9.81e-01 | BS7 -9.81e-01 | 
-Grienwank    | OWN  3.54e+00 | BS1  3.54e+00 | BS2  3.54e+00 | BS3  3.54e+00 | BS4  3.54e+00 | BS5  5.85e+01 | BS6  3.54e+00 | BS7  3.54e+00 | 
-Michalewicz  | OWN -5.29e+00 | BS1 -5.29e+00 | BS2 -5.29e+00 | BS3 -2.56e+00 | BS4 -4.74e+00 | BS5 -2.41e+00 | BS6 -1.85e+00 | BS7 -5.29e+00 | 
-Piston       | OWN  1.29e-01 | BS1  1.29e-01 | BS2  1.30e-01 | BS3  1.30e-01 | BS4  1.29e-01 | BS5  1.55e-01 | BS6  4.36e-01 | BS7  1.29e-01 | 
-Qing         | OWN  6.15e+07 | BS1  6.15e+07 | BS2  6.15e+07 | BS3  8.21e+07 | BS4  6.30e+07 | BS5  5.52e+09 | BS6  1.04e+11 | BS7  6.15e+07 | 
-Rastrigin    | OWN  2.97e+01 | BS1  2.97e+01 | BS2  2.97e+01 | BS3  6.31e+01 | BS4  2.97e+01 | BS5  8.51e+01 | BS6  1.03e+02 | BS7  2.97e+01 | 
-Rosenbrock   | OWN  7.86e+00 | BS1  7.24e+00 | BS2  7.24e+00 | BS3  1.22e+01 | BS4  1.26e+01 | BS5  3.65e+02 | BS6  1.22e+01 | BS7  1.01e+01 | 
-Schaffer     | OWN  1.78e+00 | BS1  1.78e+00 | BS2  1.78e+00 | BS3  2.84e+00 | BS4  2.19e+00 | BS5  2.81e+00 | BS6  3.32e+00 | BS7  1.78e+00 | 
-Schwefel     | OWN -9.87e+01 | BS1 -9.87e+01 | BS2 -9.87e+01 | BS3  7.47e+02 | BS4  6.41e+02 | BS5  1.90e+03 | BS6  2.79e+03 | BS7 -9.87e+01 | 
+Exponential  | OWN -9.82e-01 | BS1 -9.82e-01 | BS2 -9.82e-01 | BS3 -9.82e-01 | BS4 -9.82e-01 | BS5 -6.83e-01 | BS6 -9.82e-01 | BS7 -9.82e-01 | 
+Grienwank    | OWN  4.46e+00 | BS1  4.46e+00 | BS2  4.46e+00 | BS3  4.46e+00 | BS4  4.46e+00 | BS5  7.36e+01 | BS6  4.46e+00 | BS7  4.46e+00 | 
+Michalewicz  | OWN -5.38e+00 | BS1 -5.38e+00 | BS2 -5.38e+00 | BS3 -3.90e+00 | BS4 -4.95e+00 | BS5 -1.85e+00 | BS6 -1.58e+00 | BS7 -5.32e+00 | 
+Piston       | OWN  1.55e-01 | BS1  1.55e-01 | BS2  1.55e-01 | BS3  1.55e-01 | BS4  1.55e-01 | BS5  1.87e-01 | BS6  4.40e-01 | BS7  1.55e-01 | 
+Qing         | OWN  2.30e+07 | BS1  2.30e+07 | BS2  2.30e+07 | BS3  4.80e+07 | BS4  2.93e+07 | BS5  9.56e+09 | BS6  1.39e+11 | BS7  2.30e+07 | 
+Rastrigin    | OWN  2.70e+01 | BS1  2.70e+01 | BS2  2.70e+01 | BS3  6.71e+01 | BS4  2.70e+01 | BS5  8.26e+01 | BS6  1.04e+02 | BS7  2.70e+01 | 
+Schaffer     | OWN  1.18e+00 | BS1  1.18e+00 | BS2  1.18e+00 | BS3  1.35e+00 | BS4  1.18e+00 | BS5  2.54e+00 | BS6  1.65e+00 | BS7  1.18e+00 | 
+Schwefel     | OWN  4.39e+02 | BS1  4.39e+02 | BS2  4.39e+02 | BS3  8.30e+02 | BS4  7.57e+02 | BS5  1.70e+03 | BS6  2.81e+03 | BS7  4.39e+02 | 

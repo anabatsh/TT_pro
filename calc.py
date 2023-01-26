@@ -85,7 +85,10 @@ def calc_func(d=7, n=16, M=1.E+4, M_ng=1.E+4, with_shift=True):
     log = Log(f'result/logs/func.txt')
     log(f'--> {nm} | d={d} | n={n} | M={M:-7.1e} | Mng={M_ng:-7.1e}')
 
-    for func in teneva.func_demo_all(d, with_piston=True):
+    names = ['Ackley', 'Alpine', 'Exponential', 'Grienwank', 'Michalewicz',
+        'Piston', 'Qing', 'Rastrigin', 'Schaffer', 'Schwefel']
+
+    for func in teneva.func_demo_all(d, names=names, with_piston=True):
         # Set the grid:
         func.set_grid(n, kind='uni')
 
