@@ -122,15 +122,15 @@ def calc_func(d=7, n=16, M=1.E+4, M_ng=1.E+4, with_shift=True):
         n_opt_bs4, y_opt_bs4 = bs_nevergrad(f, func.n, M_ng, 'PSO')
         print(f'BS4 : {y_opt_bs4:-9.2e}')
 
-        # BS5 PSO method from nevergrad:
+        # BS5: NoisyBandit method from nevergrad:
         n_opt_bs5, y_opt_bs5 = bs_nevergrad(f, func.n, M_ng, 'NoisyBandit')
         print(f'BS5 : {y_opt_bs5:-9.2e}')
 
-        # BS6 PSO method from nevergrad:
+        # BS6: SPSA method from nevergrad:
         n_opt_bs6, y_opt_bs6 = bs_nevergrad(f, func.n, M_ng, 'SPSA')
         print(f'BS6 : {y_opt_bs6:-9.2e}')
 
-        # BS7 PSO method from nevergrad:
+        # BS7: Portfolio method from nevergrad:
         n_opt_bs7, y_opt_bs7 = bs_nevergrad(f, func.n, M_ng, 'Portfolio')
         print(f'BS7 : {y_opt_bs7:-9.2e}')
 
