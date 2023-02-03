@@ -69,20 +69,25 @@ def ind_tens_max_ones(d, num_ones, r):
 def update_to_rank_r(cores, r, noise=1e-3, inplace=False):
     d = len(cores)
     res = cores if inplace else [None]*d
+    to_truncate = False
     for i, Y in enumerate(cores):
         r1, n, r2 = Y.shape
         nr1 = 1 if i==0     else r
         nr2 = 1 if i==(d-1) else r
         if nr1 < r1 or nr2 < r2:
-            print("Cannot reduce rank, only biggerize it")
+            print("Initial: Order to reduce rank, so I'll truncate it. BAD")
+            to_truncate = True
 
         if nr1 == r1 and nr2 == r2:
             res[i] = Y
             continue
 
-        new_core = noise*np.random.random([nr1, n, nr2])
+        new_core = noise*np.random.random([max(nr1, r1), n, max(nr2, r2)])
         new_core[:r1, :, :r2] = Y
 
         res[i] = new_core
+
+    if to_truncate:
+        res = teneva.truncate(res, r=r)
 
     return res
