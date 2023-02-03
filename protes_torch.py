@@ -7,7 +7,7 @@ import torch
 from utils import ind_tens_max_ones
 
 
-def protes_torch(f, n, M, K=50, k=5, k_gd=100, r=5, lr=1.E-2, is_max=False, constr=False, log=False):
+def protes_torch(f, n, M, K=50, k=5, k_gd=100, r=1, lr=1.E-2, is_max=False, constr=False, log=False):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
@@ -40,7 +40,7 @@ def protes_torch(f, n, M, K=50, k=5, k_gd=100, r=5, lr=1.E-2, is_max=False, cons
     """
 
     time, i_opt, y_opt, m = tpc(), None, None, 0
-    P = _generate_initial(n, r)
+    P = _generate_initial(n, r, constr)
 
     while True:
         I_full = _sample(P, min(K, M-m))
@@ -76,7 +76,7 @@ def protes_torch(f, n, M, K=50, k=5, k_gd=100, r=5, lr=1.E-2, is_max=False, cons
 def _generate_initial(n, r, constr=False):
     """Build initial TT-tensor for probability."""
     if constr:
-        Y = ind_tens_max_ones(d, 3, r)
+        Y = ind_tens_max_ones(len(n), 3, r)
 
     else:
         d = len(n)
@@ -106,8 +106,10 @@ def _optimize(P, I_trn, y_trn, k_gd, lr, optimizer=torch.optim.Adam):
         return l
 
     opt = optimizer([G for G in P if G.requires_grad], lr)
-    for _ in range(int(k_gd)):
+    for i in range(int(k_gd)):
         opt.zero_grad()
+        if i > 0:
+            print([G.grad.data for G in P if G.requires_grad])
         loss = loss_func(P)
         loss.backward(retain_graph=True)
         opt.step()

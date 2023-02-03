@@ -1,0 +1,11 @@
+--> FUNC | d=7 | n=16 | M=1.0e+04 | Mng=1.0e+04
+Ackley       | JAX v= 9.10e+00, t= 8.22e+00 | 
+Alpine       | JAX v= 1.92e+00, t= 7.67e+00 | 
+Exponential  | JAX v=-9.86e-01, t= 7.23e+00 | 
+Grienwank    | JAX v= 3.85e+00, t= 6.93e+00 | 
+Michalewicz  | JAX v=-5.09e+00, t= 6.59e+00 | 
+Piston       | JAX v= 1.61e-01, t= 6.89e+00 | 
+Qing         | JAX v= 1.98e+08, t= 6.46e+00 | 
+Rastrigin    | JAX v= 1.99e+01, t= 6.45e+00 | 
+Schaffer     | JAX v= 1.27e+00, t= 6.82e+00 | 
+Schwefel     | JAX v= 1.80e+02, t= 6.65e+00 | 
