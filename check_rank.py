@@ -9,7 +9,7 @@ from utils import Log
 from utils import folder_ensure
 
 
-def calc(M=int(1.E+4), r_list=[1, 3, 5, 7, 9], reps=1):
+def calc(M=int(1.E+4), r_list=[1, 3, 5, 7, 9], reps=3):
     log = Log(f'result/logs_check_rank/result.txt')
 
     tasks = {
