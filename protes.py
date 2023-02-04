@@ -6,7 +6,7 @@ import torch
 from utils import ind_tens_max_ones
 
 
-def protes(f, n, M, K=50, k=5, k_gd=1, r=5, lr=1.E-1, is_max=False, constr=False, log=False):
+def protes(f, n, M, K=50, k=5, k_gd=100, r=5, lr=1.E-1, is_max=False, constr=False, log=False):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
