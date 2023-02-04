@@ -295,7 +295,11 @@ def get_constrain_tens(n, idxs):
         if len(idx) > 0:
             cur_t = teneva.tensor_delta(n, idx, -1)
             res = teneva.add(res, cur_t)
-        
+
+    # norm it
+    for G in res:
+        G /= G.shape[1]
+
     return res
 
 def build_z(p, idxs):
