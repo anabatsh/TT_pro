@@ -1,5 +1,4 @@
 import numpy as np
-import teneva
 from time import perf_counter as tpc
 import torch
 
@@ -7,7 +6,7 @@ import torch
 from utils import ind_tens_max_ones
 
 
-def protes_torch(f, n, M, K=50, k=5, k_gd=100, r=1, lr=1.E-2, is_max=False, constr=False, log=False):
+def protes_torch(f, n, M, K=50, k=5, k_gd=1, r=5, lr=1.E-1, is_max=False, constr=False, log=False):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
@@ -34,11 +33,10 @@ def protes_torch(f, n, M, K=50, k=5, k_gd=100, r=1, lr=1.E-2, is_max=False, cons
             the algorithm will be printed every step.
 
     Returns:
-        tuple: multi-index "n_opt" (list of the length "d") corresponding to
+        tuple: multi-index "i_opt" (list of the length "d") corresponding to
         the found optimum of the tensor and the related value "y_opt" (float).
 
     """
-
     time, i_opt, y_opt, m = tpc(), None, None, 0
     P = _generate_initial(n, r, constr)
 
@@ -47,30 +45,33 @@ def protes_torch(f, n, M, K=50, k=5, k_gd=100, r=1, lr=1.E-2, is_max=False, cons
         y_full = f(I_full)
         m += y_full.shape[0]
 
-        ind_opt = np.argmax(y_full) if is_max else np.argmin(y_full)
-        i_opt_curr, y_opt_curr = I_full[ind_opt, :], y_full[ind_opt]
-
-        is_new = y_opt is None
-        is_new = is_new or is_max and y_opt < y_opt_curr
-        is_new = is_new or not is_max and y_opt > y_opt_curr
-        if is_new:
-            i_opt, y_opt = i_opt_curr, y_opt_curr
-
-            if log:
-                text = ''
-                text += f'Evals : {m:-7.1e} | '
-                text += f'Opt : {y_opt:-14.7e} | '
-                text += f'Time : {tpc()-time:-14.3f}'
-                print(text)
-
+        i_opt, y_opt, is_new = _check(I_full, y_full, i_opt, y_opt, is_max)
         if m >= M:
             break
+
+        _log(i_opt, y_opt, m, time, log, is_new)
 
         ind = np.argsort(y_full)
         ind = (ind[::-1] if is_max else ind)[:k]
         _optimize(P, I_full[ind, :], y_full[ind], k_gd, lr)
 
+    _log(i_opt, y_opt, m, time, log, is_end=True)
+
     return i_opt, y_opt
+
+
+def _check(I_full, y_full, i_opt, y_opt, is_max=False):
+    ind_opt = np.argmax(y_full) if is_max else np.argmin(y_full)
+    i_opt_curr, y_opt_curr = I_full[ind_opt, :], y_full[ind_opt]
+
+    is_new = y_opt is None
+    is_new = is_new or is_max and y_opt < y_opt_curr
+    is_new = is_new or not is_max and y_opt > y_opt_curr
+
+    if is_new:
+        return i_opt_curr, y_opt_curr, True
+    else:
+        return i_opt, y_opt, False
 
 
 def _generate_initial(n, r, constr=False):
@@ -97,10 +98,25 @@ def _get_many(Y, I):
     return Q[:, 0]
 
 
+def _log(i_opt, y_opt, m, time, log=False, is_new=False, is_end=False):
+    if not log or not is_new and not is_end:
+        return
+
+    text = ''
+    text += f'Evals : {m:-7.1e} | '
+    text += f'Opt : {y_opt:-14.7e} | '
+    text += f'Time : {tpc()-time:-14.3f}'
+
+    if is_end:
+        text += ' <<< DONE'
+
+    print(text)
+
+
 def _optimize(P, I_trn, y_trn, k_gd, lr, optimizer=torch.optim.Adam):
-    """Perform several GD steps for TT-tensor."""
-    def loss_func(P_curr):
-        p = _get_many(P_curr, I_trn)
+    """Perform several GD steps for probability TT-tensor."""
+    def loss_func(P_cur):
+        p = _get_many(P_cur, I_trn)
         l = -torch.log(p)
         l = torch.sum(l)
         return l
@@ -108,8 +124,6 @@ def _optimize(P, I_trn, y_trn, k_gd, lr, optimizer=torch.optim.Adam):
     opt = optimizer([G for G in P if G.requires_grad], lr)
     for i in range(int(k_gd)):
         opt.zero_grad()
-        if i > 0:
-            print([G.grad.data for G in P if G.requires_grad])
         loss = loss_func(P)
         loss.backward(retain_graph=True)
         opt.step()
@@ -117,34 +131,36 @@ def _optimize(P, I_trn, y_trn, k_gd, lr, optimizer=torch.optim.Adam):
 
 def _sample(Y, K):
     """Generate K samples according to given probability TT-tensor."""
-    d = len(Y)
-    n = [G.shape[1] for G in Y]
-    I = torch.zeros((K, d), dtype=torch.int)
-    Z = [None] * (d+1)
+    with torch.no_grad():
+        d = len(Y)
+        n = [G.shape[1] for G in Y]
+        I = torch.zeros((K, d), dtype=torch.int)
+        Z = [None] * (d+1)
 
-    Z[-1] = torch.ones(1, dtype=torch.double)
-    for j in range(d-1, 0, -1):
-        Z[j] = torch.sum(Y[j], dim=1) @ Z[j+1]
-        Z[j] = Z[j].reshape(-1)
+        Z[-1] = torch.ones(1, dtype=torch.double)
+        for j in range(d-1, 0, -1):
+            Z[j] = torch.sum(Y[j], dim=1) @ Z[j+1]
+            Z[j] = Z[j].reshape(-1)
 
-    p = Y[0] @ Z[1]
-    p = p.flatten()
-    p[p < 0] = 0.
-    p = p / p.sum()
-
-    ind = torch.multinomial(p, K, replacement=True)
-
-    Z[0] = Y[0][0, ind, :]
-    I[:, 0] = ind
-
-    for j, G in enumerate(Y[1:], start=1):
-        p = torch.einsum('ma,aib,b->mi', Z[j-1], G, Z[j+1])
+        p = Y[0] @ Z[1]
+        p = p.flatten()
         p[p < 0] = 0.
+        p = p / p.sum()
 
-        ind = torch.tensor([
-            torch.multinomial(pi/pi.sum(), 1, replacement=True) for pi in p])
+        ind = torch.multinomial(p, K, replacement=True)
 
-        Z[j] = torch.einsum("il,lij->ij", Z[j-1], G[:, ind])
-        I[:, j] = ind
+        Z[0] = Y[0][0, ind, :]
+        I[:, 0] = ind
 
-    return I
+        for j, G in enumerate(Y[1:], start=1):
+            p = torch.einsum('ma,aib,b->mi', Z[j-1], G, Z[j+1])
+            p[p < 0] = 0.
+
+            ind = torch.tensor([
+                torch.multinomial(
+                    pi/pi.sum(), 1, replacement=True) for pi in p])
+
+            Z[j] = torch.einsum("il,lij->ij", Z[j-1], G[:, ind])
+            I[:, j] = ind
+
+        return I
