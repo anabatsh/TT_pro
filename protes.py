@@ -108,6 +108,7 @@ def protes(f, d, n, M, K=50, k=5, k_gd=100, r=5, lr=1.E-4, sig=None, M_ANOVA=Non
         rng, key = jax.random.split(rng)
         key_s = jax.random.split(key, K)
         ind = generate_random_index(key_s, params)
+
         y = f_batch(ind)
 
         ind_sort = np.argsort(y, kind='stable')
