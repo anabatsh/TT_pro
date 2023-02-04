@@ -51,7 +51,7 @@ bs_all = [
 ]
 
 
-def check(M=1.E+2, use_jax=False, with_bs=True, with_log=False):
+def check(M=1.E+4, use_jax=True, with_bs=True, with_log=True):
     log = Log(f'result/logs/check.txt')
     log(f'--> Computations | M={M:-7.1e}')
 
