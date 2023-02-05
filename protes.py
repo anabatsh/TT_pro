@@ -93,7 +93,7 @@ def protes(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, info={}, i_ref=None,
             info['m_ref_list'].append(info['m'])
             info['p_opt_ref_list'].append(_get_one(P, info['i_opt']))
             info['p_top_ref_list'].append(_get_one(P, I[ind[0], :]))
-            if i_ref:
+            if i_ref is not None:
                 info['p_ref_list'].append(_get_one(P, i_ref))
 
         info['t'] = tpc() - time
