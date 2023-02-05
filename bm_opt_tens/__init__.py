@@ -18,3 +18,4 @@ from .bm_opt_tens_knapsack import BmOptTensKnapsack
 from .bm_opt_tens_knapsack_quad import BmOptTensKnapsackQuad
 from .bm_opt_tens_max_cut import BmOptTensMaxCut
 from .bm_opt_tens_mvc import BmOptTensMvc
+from .bm_opt_tens_topopt import BmOptTensTopopt

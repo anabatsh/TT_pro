@@ -22,7 +22,7 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 4. Install dependencies:
     ```bash
-    pip install numpy teneva==0.12.8 ttopt==0.5.0 jax optax equinox qubogen gekko nevergrad torch
+    pip install numpy scipy teneva==0.12.8 ttopt==0.5.0 jax optax equinox qubogen gekko nevergrad torch
     ```
 
 5. Clean temporary dir after runs:
