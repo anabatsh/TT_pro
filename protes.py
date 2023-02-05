@@ -197,7 +197,7 @@ def _log(info, log=False, log_ind=False, is_new=False, is_end=False):
     text += f'y {info["y_opt"]:-11.4e}'
 
     if len(info["p_ref_list"]) > 0:
-        text += f' | y_ref {info["p_ref_list"][-1]:-11.4e} | '
+        text += f' | p_ref {info["p_ref_list"][-1]:-11.4e} | '
 
     if log_ind:
         text += f' | i {"".join([str(i) for i in info["i_opt"]])}'

@@ -10,6 +10,11 @@ class BmOptTens:
         self.opts = {}
         self.err = ''
 
+        self.i_min = None
+        self.y_min = None
+        self.i_max = None
+        self.y_max = None
+
     def __call__(self, I):
         return self.f(I)
 
@@ -34,8 +39,18 @@ class BmOptTens:
         text = '-' * 72 + '\n' + 'BM: '
         text += self.name + ' ' * max(0, 30-len(self.name)) +  ' | '
         text += f'DIMS = {self.d:-5d} | <MODE SIZE> = {np.mean(self.n):-6.1f}\n'
+
+        if self.y_min is not None or self.y_max is not None:
+            text += ' ' * 30
+            if self.y_min is not None:
+                text += f'y_min = {self.y_min:-11.4e} | '
+            if self.y_max is not None:
+                text += f'y_max = {self.y_max:-11.4e}'
+            text += '\n'
+
         if self.desc:
             desc = f'  [ {self.desc.strip()} ]'
             text += desc.replace('            ', '    ')
+
         text += '\n' + '=' * 72 + '\n'
         return text

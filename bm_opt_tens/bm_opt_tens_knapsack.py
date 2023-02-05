@@ -16,6 +16,12 @@ class BmOptTensKnapsack(BmOptTens):
             application to antenna topology optimization.
         """
 
+        self.i_min = np.array([
+            1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0,
+            1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0,
+            1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0], dtype=int)
+        self.y_min = -3103.
+
         self.prep()
 
         if d != 50:
