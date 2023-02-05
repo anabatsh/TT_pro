@@ -32,8 +32,8 @@ class BmOptTens:
 
     def info(self):
         text = '-' * 72 + '\n' + 'BM: '
-        text += self.name + ' ' * max(0, 20-len(self.name)) +  ' | '
-        text += f'DIM = {self.d}:-4d | <MODE> = {np.mean(self.n):-4.1f}\n'
+        text += self.name + ' ' * max(0, 30-len(self.name)) +  ' | '
+        text += f'DIMS = {self.d:-5d} | <MODE SIZE> = {np.mean(self.n):-6.1f}\n'
         if self.desc:
             desc = f'  [ {self.desc.strip()} ]'
             text += desc.replace('            ', '    ')
