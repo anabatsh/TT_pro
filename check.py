@@ -51,9 +51,9 @@ bs_all = [
 ]
 
 
-def check(M=1.E+4, use_jax=True, with_bs=True, with_log=True):
+def check(m=1.E+4, use_jax=True, with_bs=True, with_log=True):
     log = Log(f'result/logs/check.txt')
-    log(f'--> Computations | M={M:-7.1e}')
+    log(f'--> Computations | m={m:-7.1e}')
 
     for bm in bm_all:
         log('')
@@ -62,12 +62,12 @@ def check(M=1.E+4, use_jax=True, with_bs=True, with_log=True):
         text = name + ' ' * max(0, 20-len(name)) +  ' >>> '
 
         opt = protes_jax if use_jax else protes
-        i_opt, y_opt = opt(bm.f, bm.n, M, log=with_log)
+        i_opt, y_opt = opt(bm.f, bm.n, m, log=with_log)
         text += f'OWN {y_opt:-9.2e} | '
 
         if with_bs:
             for i, bs in enumerate(bs_all, 1):
-                bs.prep(bm.f, bm.n, M).optimize()
+                bs.prep(bm.f, bm.n, m).optimize()
                 text += f'BS{i} {bs.y_opt:-9.2e} | '
 
         log(text)
