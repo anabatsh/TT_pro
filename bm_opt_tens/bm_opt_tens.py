@@ -31,9 +31,11 @@ class BmOptTens:
         return np.array([self._f(i) for i in I])
 
     def info(self):
-        text = 'BM: '
+        text = '-' * 72 + '\n' + 'BM: '
         text += self.name + ' ' * max(0, 20-len(self.name)) +  ' | '
         text += f'DIM = {self.d}:-4d | <MODE> = {np.mean(self.n):-4.1f}\n'
         if self.desc:
-            text += f'  [ {self.desc} ]\n'
+            desc = f'  [ {self.desc.strip()} ]'
+            text += desc.replace('            ', '    ')
+        text += '\n' + '=' * 72 + '\n'
         return text

@@ -7,7 +7,14 @@ from .bm_opt_tens import BmOptTens
 class BmOptTensKnapsack(BmOptTens):
     def __init__(self, d=50, name='knapsack'):
         super().__init__(50, 2, name)
-        self.desc = 'Binary knapsack problem with fixed weights wi in [5, 20], profits pi in [50, 100] (i = 1, 2, . . . , d) and the maximum capacity C = 1000. It is from work (Dong et al., 2021) (problem k3; d = 50), where anglemodulated bat algorithm (AMBA) algorithm was proposed for high-dimensional binary optimization problems with engineering application to antenna topology optimization.'
+        self.desc = """
+            Binary knapsack problem with fixed weights wi in [5, 20], profits
+            pi in [50, 100] (i = 1, 2, . . . , d) and the maximum capacity
+            C = 1000. It is from work (Dong et al., 2021) (problem k3; d = 50),
+            where anglemodulated bat algorithm (AMBA) algorithm was proposed
+            for high-dimensional binary optimization problems with engineering
+            application to antenna topology optimization.
+        """
 
         self.prep()
 
