@@ -38,15 +38,7 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 
 ## Usage
 
-1. Run `python calc.py control` to solve the optimal control problem. The results will be presented in the text file `result/logs/control.txt`.
-
-2. Run `python calc.py control_constr` to solve the optimal control problem with constraints. The results will be presented in the text file `result/logs/control_constr.txt`.
-
-3. Run `python calc.py func` to perform computations for various analytical multivariable functions. The results will be presented in the text file `result/logs/func.txt`.
-
-4. Run `python calc.py knapsack` to perform computations for special knapsack problem. The results will be presented in the text file `result/logs/knapsack.txt`.
-
-5. Run `python calc.py qubo` to solve the QUBO problem. The results will be presented in the text file `result/logs/qubo.txt`.
+Please, see our [colab notebook](https://colab.research.google.com/drive/1W36LHd9Rm1R4xi-wGFSXtzSH2iF4h_4y?usp=sharing) with various examples.
 
 
 ## Authors
@@ -55,3 +47,18 @@ Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of t
 - [Ivan Oseledets](https://github.com/oseledets)
 - [Andrei Chertkov](https://github.com/AndreiChertkov)
 - [Gleb Ryzhakov](https://github.com/G-Ryzhakov)
+
+
+## Citation
+
+If you find our approach and/or code useful in your research, please consider citing:
+
+```bibtex
+@article{batsheva2023protes,
+    author    = {Batsheva, Anastasia and Chertkov, Andrei  and Ryzhakov, Gleb and Oseledets, Ivan},
+    year      = {2023},
+    title     = {PROTES: Probabilistic Optimization with Tensor Sampling},
+    journal   = {arXiv preprint arXiv:2301.12162},
+    url       = {https://arxiv.org/pdf/2301.12162.pdf}
+}
+```
