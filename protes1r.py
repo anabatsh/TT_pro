@@ -281,8 +281,23 @@ def sample_ind_rand(Y, m=1, unsert=1e-10):
     res[:, 0] = ind
     for i, c in enumerate(Y[1:], start=1):
         p = np.einsum('ma,aib,b->mi', phi[i-1], Y[i], phi[i+1])
-        p = np.maximum(p, 0)
-        ind = np.array([np.random.choice(c.shape[1], p=pi/pi.sum()) for pi in p])
+        for pi in p:
+            pi[np.isnan(pi)] = 0
+            pi[np.isinf(pi)] = 0
+            if pi.sum() == 0:
+                pi[:] = np.ones(len(pi))
+            pi /= np.max(np.abs(pi))
+            pi[np.isinf(pi)] = 0
+            pi[np.isnan(pi)] = 0
+            if pi.sum() == 0:
+                pi[:] = np.ones(len(pi))
+
+            pi[:] = np.maximum(pi, 0)
+        try:
+            ind = np.array([np.random.choice(c.shape[1], p=pi/pi.sum()) for pi in p])
+        except:
+            print(p)
+            exit(0)
         res[:, i] = ind
         phi[i] = np.einsum("il,lij->ij", phi[i-1], c[:, ind])
 
