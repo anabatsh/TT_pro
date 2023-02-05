@@ -49,7 +49,7 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, info={}, i_ref=N
     """
     time = tpc()
     info.update({'m': 0, 't': 0, 'i_opt': None, 'y_opt': None, 'is_max': is_max,
-        'm_opt_list': [], 'y_opt_list': [], 'y_ref_list': []})
+        'm_opt_list': [], 'y_opt_list': [], 'm_ref_list': [], 'y_ref_list': []})
 
     optim = optax.adam(lr)
     sample = jax.jit(jax.vmap(_sample_one, (None, 0)))
@@ -90,6 +90,7 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, info={}, i_ref=N
             P, opt_state = optimize(P, I[ind, :], opt_state)
 
         if i_ref:
+            info['m_ref_list'].append(info['m'])
             info['y_ref_list'].append(_get_one(P, i_ref))
 
         info['t'] = tpc() - time

@@ -15,9 +15,10 @@ class BmOptTens:
 
     def f(self, I):
         if self.err:
-            raise ValueError(f'Benchmark "{self.name}" is not ready')
+            raise ValueError(f'Benchmark "{self.name}" not ready ({self.err})')
 
-        I = np.asanyarray(I, dtype=int)
+        I = np.asanyarray(I, dtype=int) # TODO! Add jax and torch versions
+
         if len(I.shape) == 2:
             return self._f_batch(I)
         else:
@@ -28,3 +29,11 @@ class BmOptTens:
 
     def _f_batch(self, I):
         return np.array([self._f(i) for i in I])
+
+    def info(self):
+        text = 'BM: '
+        text += self.name + ' ' * max(0, 20-len(self.name)) +  ' | '
+        text += f'DIM = {self.d}:-4d | <MODE> = {np.mean(self.n):-4.1f}\n'
+        if self.desc:
+            text += f'  [ {self.desc} ]\n'
+        return text
