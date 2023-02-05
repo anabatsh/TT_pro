@@ -48,8 +48,8 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, info={}, i_ref=N
 
     """
     time = tpc()
-    info = {'m': 0, 't': 0, 'i_opt': None, 'y_opt': None, 'is_max': is_max,
-        'm_opt_list': [], 'y_opt_list': [], 'y_ref_list': []}
+    info.update({'m': 0, 't': 0, 'i_opt': None, 'y_opt': None, 'is_max': is_max,
+        'm_opt_list': [], 'y_opt_list': [], 'y_ref_list': []})
 
     optim = optax.adam(lr)
     sample = jax.jit(jax.vmap(_sample_one, (None, 0)))
@@ -155,14 +155,12 @@ def _get_one(Y, i):
 def _likelihood_one(Y, ind):
     """Likelihood in multi-index ind for TT-tensor Y."""
     d = len(Y)
-    res = jnp.zeros(d, dtype=jnp.int32)
+
     Z = [[]] * (d+1)
     Z[-1] = jnp.ones(1)
-
-    for i in range(d-1, 0, -1):
-        mat = jnp.sum(Y[i], axis=1)
-        Z[i] = mat @ Z[i+1]
-        Z[i] = Z[i] / jnp.linalg.norm(Z[i])
+    for j in range(d-1, 0, -1):
+        Z[j] = jnp.sum(Y[j], axis=1) @ Z[j+1]
+        Z[j] = Z[j] / jnp.linalg.norm(Z[j])
     Z[0] = Y[0][0, ind[0], :]
 
     p = jnp.einsum('aib,b->ai', Y[0], Z[1])
@@ -172,15 +170,14 @@ def _likelihood_one(Y, ind):
 
     p_all = [p[ind[0]]]
 
-    for i in range(1, d):
-        p = jnp.einsum('a,aib,b->i', Z[i-1], Y[i], Z[i+1])
+    for j in range(1, d):
+        p = jnp.einsum('a,aib,b->i', Z[j-1], Y[j], Z[j+1])
         p = jnp.abs(p)
         p = p / jnp.sum(p)
-        p_all.append(p[ind[i]])
+        p_all.append(p[ind[j]])
 
-        mat = Y[i][:, ind[i], :]
-        Z[i] = Z[i-1] @ mat
-        Z[i] = Z[i] / jnp.linalg.norm(Z[i])
+        Z[j] = Z[j-1] @ Y[j][:, ind[j], :]
+        Z[j] = Z[j] / jnp.linalg.norm(Z[j])
 
     return jnp.sum(jnp.log(jnp.array(p_all)))
 
