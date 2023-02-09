@@ -62,7 +62,9 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, info={}, i_ref=N
 
     @jax.jit
     def loss(P_cur, I_cur):
-        return jnp.mean(-likelihood(P_cur, I_cur))
+        p = likelihood(P_cur, I_cur)
+        #jax.debug.print("🤯 {p} 🤯", p=p)
+        return jnp.mean(-p)
 
     @jax.jit
     def optimize(P, I_cur, opt_state):
@@ -160,40 +162,27 @@ def _interface_matrices(Y):
     return Z
 
 
-def _likelihood(Y, ind):
-    """Likelihood in multi-index ind for TT-tensor Y."""
-    d = len(Y)
-
+def _likelihood(Y, I):
+    """Likelihood in batch of multi-indices I for TT-tensor Y."""
     Z = _interface_matrices(Y)
 
-    G = jnp.einsum('aib,b->i', Y[0], Z[1])
-    #G = G.flatten()
+    G = jnp.einsum('riq,q->ri', Y[0], Z[1]).flatten()
     G = jnp.abs(G)
-    G = G / G.sum()
+    G /= G.sum()
+    y = [G[I[:, 0]]]
 
-    y = [G[ind[:, 0]]]
-    #print(y[-1].shape)
+    Z[0] = Y[0][0, I[:, 0], :]
 
-    Z[0] = Y[0][0, ind[:, 0], :]
-
-    for j in range(1, d):
-        G = jnp.einsum('ka,aib,b->ki', Z[j-1], Y[j], Z[j+1])
+    for j in range(1, len(Y)):
+        G = jnp.einsum('jr,riq,q->ji', Z[j-1], Y[j], Z[j+1])
         G = jnp.abs(G)
-        G = G / G.sum(axis=1)[:, None] # ?????
+        G /= G.sum(axis=1)[:, None]
+        y.append(jnp.array([ g[i] for g, i in zip(G, I[:, j])  ]))
 
-        #y.append(G[:, ind[:, j]])
-        y.append(jnp.array([ g[i] for g, i in zip(G, ind[:, j])  ]))
-        #print(y[-1].shape)
+        Z[j] = jnp.einsum('ir,riq->iq', Z[j-1], Y[j][:, I[:, j], :])
+        Z[j] /= jnp.linalg.norm(Z[j], axis=1)[:, None]
 
-        Z[j] = jnp.einsum('kr,rkq->kq', Z[j-1], Y[j][:, ind[:, j], :])
-        Z[j] = Z[j] / jnp.linalg.norm(Z[j], axis=1)[:, None]
-
-    y = jnp.array(y)
-    y = jnp.log(y)
-    y = jnp.sum(y, axis=1)
-    #print(y.shape)
-
-    return y
+    return jnp.sum(jnp.log(jnp.array(y).T), axis=1)
 
 
 def _log(info, log=False, log_ind=False, is_new=False, is_end=False):
