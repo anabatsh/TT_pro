@@ -5,6 +5,11 @@
 
 Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization of the multidimensional arrays and  discretized multivariable functions based on the tensor train (TT) format.
 
+---
+
+**Attention!** This is a repository for code development and testing. Please use the stable version of our optimizer from the [protes](https://github.com/anabatsh/PROTES) repository (it can be installed as `pip install protes`).
+
+---
 
 ## Installation
 
