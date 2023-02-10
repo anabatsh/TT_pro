@@ -1,4 +1,3 @@
-import numpy as np
 from time import perf_counter as tpc
 import torch
 
