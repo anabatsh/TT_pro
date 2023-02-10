@@ -2,11 +2,12 @@ import numpy as np
 import teneva
 import numba
 from time import perf_counter as tpc
+from scipy.special import softmax
 
 
 def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, batch=False,
            with_cache=False, with_qtt=False, is_rand_init=False, log=False, log_ind=False, constr=False,
-           ret_tt=False, cores=None, norm=True):
+           ret_tt=False, cores=None, norm=True, info={}):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
@@ -55,6 +56,7 @@ def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, bat
 
     """
     global params, lonly_idx
+    info.update(m_opt_list=[], m=0, M=0, M_cache=0)
 
     d = len(n)
 
@@ -66,7 +68,6 @@ def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, bat
     n_opt = None
     y_opt = np.inf
 
-    info = {'M': 0, 'M_cache': 0}
     cache = {}
 
     if with_qtt:
@@ -152,6 +153,7 @@ def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, bat
         ind = sample_ind_rand(cores, K, 0.05)
         
         y = f_batch(ind)
+        info['m'] += y.shape[0]
 
         ind_sort = np.argsort(y, kind='stable')
         ind_top = ind[ind_sort[:k], :]
@@ -227,6 +229,7 @@ def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, bat
             
 
         if log and (is_upd or info['M'] >= M):
+            info['m_opt_list'].append(info['m'])
             text = ''
             text += f'Evals : {info["M"]:-7.1e} | '
             # text += f'Cache : {info["M_cache"]:-7.1e} | '
@@ -325,9 +328,12 @@ def build_z(p, idxs):
     return [np.einsum("ijk,j->ijk", ti, pi) for ti, pi in zip(t, p)]
 
 
-def norm_p(p):
+def norm_p(p, use_sum=False):
     for pi in p:
-        pi /= pi.sum()
+        if use_sum:
+            pi /= pi.sum()
+        else:
+            pi[:] = softmax(pi)
 
 @numba.jit
 def sa_log(p, lr, k):
@@ -369,8 +375,7 @@ def _generate_initial1r(n, *, is_rand=True, noise_not_rand=1e-2):
     else:
         Y = [(1 + noise_not_rand*np.random.random(size=ni)) for ni in n] 
 
-    for pi in Y:
-        pi /= pi.sum()
+    norm_p(Y)
 
     return Y
 
