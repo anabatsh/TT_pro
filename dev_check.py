@@ -3,9 +3,9 @@ import numpy as np
 
 from bm_opt_tens import *
 from bs_opt_tens import *
-from protes import protes
 from protes_jax import protes_jax
-from dev_protes_jax import dev_protes_jax
+from protes_jax_fast import protes_jax_fast
+from protes_tor import protes_tor
 from utils import Log
 from utils import folder_ensure
 
@@ -48,13 +48,12 @@ def check(m=1.E+4, use_jax=True, with_bs=False, with_log=True):
 
         name = f'{bm.name}-{bm.d}D'
         text = name + ' ' * max(0, 20-len(name)) +  ' >>> '
-        np.random.seed(42)
-        i_opt, y_opt = dev_protes_jax(bm.f, bm.n, m, log=with_log)
-        text += f'DEV {y_opt:-9.2e} | '
 
-        np.random.seed(42)
-        i_opt, y_opt = protes_jax(bm.f, bm.n, m, log=with_log)
-        text += f'JAX {y_opt:-9.2e} | '
+        i_opt, y_opt = protes_jax_fast(bm.f, bm.n, m, log=with_log)
+        text += f'XXX {y_opt:-9.2e} | '
+
+        #i_opt, y_opt = protes_jax(bm.f, bm.n, m, log=with_log)
+        #text += f'JAX {y_opt:-9.2e} | '
 
         if with_bs:
             for i, bs in enumerate(bs_all, 1):
