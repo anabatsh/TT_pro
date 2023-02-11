@@ -4,7 +4,7 @@ import optax
 from time import perf_counter as tpc
 
 
-def protes_jax_fast(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax_fast', device='cpu'):
+def protes_jax_fast(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu'):
     time = tpc()
     info.update({'mod': mod, 'is_max': is_max, 'm': 0, 't': 0,
         'i_opt': None, 'y_opt': None, 'm_opt_list': [], 'y_opt_list': [],
@@ -19,19 +19,21 @@ def protes_jax_fast(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, see
     if P is None:
         rng, key = jax.random.split(rng)
         P = _generate_initial(len(n), n[0], r, key)
+    elif len(P[1].shape) != 4:
+        raise ValueError('Initial P tensor should have special format')
 
     optim = optax.adam(lr)
     state = optim.init(P)
 
     interface_matrices = jax.jit(_interface_matrices)
-    sample = jax.jit(jax.vmap(_sample, (None, 0)))
+    sample = jax.jit(jax.vmap(_sample, (None, None, None, None, 0)))
     likelihood = jax.jit(jax.vmap(_likelihood, (None, None, None, None, 0)))
 
     @jax.jit
     def loss(P_cur, I_cur):
-        Yl, Ym, Yr = P_cur
-        Zm = interface_matrices(Ym, Yr)
-        l = likelihood(Yl, Ym, Yr, Zm, I_cur)
+        Pl, Pm, Pr = P_cur
+        Zm = interface_matrices(Pm, Pr)
+        l = likelihood(Pl, Pm, Pr, Zm, I_cur)
         return np.mean(-l)
 
     loss_grad = jax.grad(loss)
@@ -45,7 +47,9 @@ def protes_jax_fast(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, see
 
     while True:
         rng, key = jax.random.split(rng)
-        I = sample(P, jax.random.split(key, k))
+        Pl, Pm, Pr = P
+        Zm = interface_matrices(Pm, Pr)
+        I = sample(Pl, Pm, Pr, Zm, jax.random.split(key, k))
 
         y = f(I)
         y = np.array(y)
@@ -63,7 +67,6 @@ def protes_jax_fast(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, see
             P, state = optimize(P, I[ind, :], state)
 
         if i_ref is not None: # For debug only
-            raise NotImplementedError('TODO')
             _set_ref(P, info, I, ind, i_ref)
 
         info['t'] = tpc() - time
@@ -105,11 +108,19 @@ def _generate_initial(d, n, r, key):
     return [Yl, Ym, Yr]
 
 
-def _get(Y, i):
+def _get(Yl, Ym, Yr, i):
     """Compute the element of the TT-tensor Y for given multi-index i."""
-    Q = Y[0][0, i[0], :]
-    for j in range(1, len(Y)):
-        Q = np.einsum('r,rq->q', Q, Y[j][:, i[j], :])
+    def scan(Q, data):
+        I_cur, Y_cur = data
+
+        Q = np.einsum('r,rq->q', Q, Y_cur[:, I_cur, :])
+
+        return Q, None
+
+    Q, _ = scan(np.ones(1), (i[0], Yl))
+    Q, _ = jax.lax.scan(scan, Q, (i[1:-1], Ym))
+    Q, _ = scan(Q, (i[-1], Yr))
+
     return Q[0]
 
 
@@ -170,80 +181,36 @@ def _log(info, log=False, log_ind=False, is_new=False, is_end=False):
     print(text)
 
 
-def _sample(Y, key):
+def _sample(Yl, Ym, Yr, Zm, key):
     """Generate sample according to given probability TT-tensor Y."""
-
-    def _interface_matrices_old(Y):
-        """Compute the "interface matrices" for the TT-tensor Y."""
-        d = len(Y)
-        Z = [[]] * (d+1)
-        Z[0] = np.ones(1)
-        Z[d] = np.ones(1)
-        for j in range(d-1, 0, -1):
-            Z[j] = np.sum(Y[j], axis=1) @ Z[j+1]
-            Z[j] /= np.linalg.norm(Z[j])
-        return Z
-
-    YY = [Y[0]]       # TODO: remove
-    for G in Y[1]:
-        YY.append(G)
-    YY.append(Y[-1])
-    Y = YY
-
-    Z = _interface_matrices_old(Y)
-
-    d = len(Y)
-    keys = jax.random.split(key, d)
-    I = np.zeros(d, dtype=np.int32)
-
-
-
-    G = np.einsum('riq,q->i', Y[0], Z[1])
-    G = np.abs(G)
-    G /= G.sum()
-
-    i = jax.random.choice(keys[0], np.arange(Y[0].shape[1]), p=G)
-    I = I.at[0].set(i)
-
-    Z[0] = Y[0][0, i, :]
-
-    for j in range(1, d):
-        G = np.einsum('r,riq,q->i', Z[j-1], Y[j], Z[j+1])
-        G = np.abs(G)
-        G /= np.sum(G)
-
-        i = jax.random.choice(keys[j], np.arange(Y[j].shape[1]), p=G)
-        I = I.at[j].set(i)
-
-        Z[j] = Z[j-1] @ Y[j][:, i, :]
-        Z[j] /= np.linalg.norm(Z[j])
-
-    return I
-
-
     def scan(Q, data):
-        I_cur, Y_cur, Z_cur = data
+        key_cur, Y_cur, Z_cur = data
 
         G = np.einsum('r,riq,q->i', Q, Y_cur, Z_cur)
         G = np.abs(G)
         G /= np.sum(G)
 
-        Q = np.einsum('r,rq->q', Q, Y_cur[:, I_cur, :])
+        i = jax.random.choice(key_cur, np.arange(Y_cur.shape[1]), p=G)
+
+        Q = np.einsum('r,rq->q', Q, Y_cur[:, i, :])
         Q /= np.linalg.norm(Q)
 
-        return Q, G[I_cur]
+        return Q, i
 
-    Q, yl = scan(np.ones(1), (i[0], Yl, Yl[0, i[0], :]))
-    Q, ym = jax.lax.scan(scan, Q, (i[1:-1], Ym, Zm))
-    Q, yr = scan(Q, (i[-1], Yr, np.ones(1)))
+    keys = jax.random.split(key, len(Ym) + 2)
 
-    y = np.hstack((np.array(yl), ym, np.array(yr)))
-    return np.sum(np.log(np.array(y)))
+    Q, il = scan(np.ones(1), (keys[0], Yl, Zm[0]))
+    Q, im = jax.lax.scan(scan, Q, (keys[1:-1], Ym, Zm))
+    Q, ir = scan(Q, (keys[-1], Yr, np.ones(1)))
+
+    il = np.array(il, dtype=np.int32)
+    ir = np.array(ir, dtype=np.int32)
+    return np.hstack((il, im, ir))
 
 
 def _set_ref(P, info, I, ind, i_ref=None):
     info['m_ref_list'].append(info['m'])
-    info['p_opt_ref_list'].append(_get(P, info['i_opt']))
-    info['p_top_ref_list'].append(_get(P, I[ind[0], :]))
+    info['p_opt_ref_list'].append(_get(*P, info['i_opt']))
+    info['p_top_ref_list'].append(_get(*P, I[ind[0], :]))
     if i_ref is not None:
-        info['p_ref_list'].append(_get(P, i_ref))
+        info['p_ref_list'].append(_get(*P, i_ref))
