@@ -1,0 +1,3 @@
+--> Computations | m=1.0e+04
+
+knapsack-50D         >>> XXX -3.10e+03 | 

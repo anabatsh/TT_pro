@@ -164,6 +164,8 @@ def _interface_matrices(Y):
 
 def _likelihood(Y, I):
     """Likelihood in batch of multi-indices I for TT-tensor Y."""
+    d = len(Y)
+
     Z = _interface_matrices(Y)
 
     G = jnp.einsum('riq,q->ri', Y[0], Z[1]).flatten()
@@ -173,7 +175,7 @@ def _likelihood(Y, I):
 
     Z[0] = Y[0][0, I[:, 0], :]
 
-    for j in range(1, len(Y)):
+    for j in range(1, d):
         G = jnp.einsum('jr,riq,q->ji', Z[j-1], Y[j], Z[j+1])
         G = jnp.abs(G)
         G /= G.sum(axis=1)[:, None]
