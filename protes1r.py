@@ -5,9 +5,9 @@ from time import perf_counter as tpc
 from scipy.special import softmax
 
 
-def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, batch=False,
-           with_cache=False, with_qtt=False, is_rand_init=False, log=False, log_ind=False, constr=False,
-           ret_tt=False, cores=None, norm=True, info={}):
+def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-4, sig=None, M_ANOVA=None, batch=False,
+           with_cache=True, with_qtt=False, is_rand_init=False, log=False, log_ind=False, constr=False,
+           ret_tt=False, cores=None, norm=True, sq=True, K_rebuild=200, info={}):
     """Tensor optimization based on sampling from the probability TT-tensor.
 
     Method PROTES (PRobability Optimizer with TEnsor Sampling) for optimization
@@ -58,6 +58,9 @@ def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, bat
     global params, lonly_idx
     info.update(m_opt_list=[], m=0, M=0, M_cache=0)
 
+    if sq:
+        make_step = make_step_constr
+
     d = len(n)
 
     if constr:
@@ -105,7 +108,7 @@ def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, bat
         return np.array([cache[tuple(i)] for i in I])
 
     if cores is None:
-        params = _generate_initial1r(n, is_rand=is_rand_init)
+        params = _generate_initial1r(n, is_rand=is_rand_init, sq=sq)
     else:
         params = cores
 
@@ -135,28 +138,39 @@ def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, bat
         peaks.append(idx)
         idxs_cores = get_constrain_tens([len(pi) for pi in params], peaks)
         #teneva.show(idxs_cores)
-        print(teneva.erank(idxs_cores))
-        for pi in params:
-            pi += 0.01
-        norm_p(params)
+        print(teneva.erank(idxs_cores), info['M'], info['M_cache'], f_batch([idx]))
+        # for pi in params:
+            # pi += 0.1
+        # norm_p(params, sq=sq)
+
+        I_big_trn = most_k_cache(cache, [], k=K_rebuild + len(peaks))
+        new_p = _generate_initial1r(n, is_rand=is_rand_init, sq=sq)
+
+        for pi, np in zip(params, new_p):
+            pi[:] = np
+
+        make_step(params, I_big_trn, lr=lr, norm=norm, k_sa=k_gd)
 
         return idxs_cores
 
-    
+
     while True:
         #print(params)
         #rng, key = jax.random.split(rng)
         #key_s = jax.random.split(key, K)
         #arg = [params, idxs] if new_strategy else params
         #ind = generate_random_index(key_s, arg)
-        cores = [np.einsum("ijk,j->ijk", G, pi) for G, pi in zip(idxs_cores, params)]
-        ind = sample_ind_rand(cores, K, 0.05)
+
+        cores = [np.einsum("ijk,j->ijk", G, pi*pi if sq else pi) for G, pi in zip(idxs_cores, params)]
+        ind = sample_ind_rand(cores, K)
+        # ind = teneva.optima_tt_beam(cores, k=K, l2r=True, ret_all=True)
         
         y = f_batch(ind)
         info['m'] += y.shape[0]
 
         ind_sort = np.argsort(y, kind='stable')
-        ind_top = ind[ind_sort[:k], :]
+        # ind_top = ind[ind_sort[:k], :]
+        ind_top = ind[y <= y[ind_sort[k-1]], :]
 
         ind_to_check = ind_top
         ind_np = np.unique(ind_to_check, axis=0)
@@ -254,7 +268,7 @@ def protes1r(f, n, M, K=50, k=5, k_gd=500, lr=1.E-3, sig=None, M_ANOVA=None, bat
 
 
 # !!!! TODO change this to the teneva version after update
-def sample_ind_rand(Y, m=1, unsert=1e-10):
+def sample_ind_rand(Y, m=1, unsert=1e-8, sq=False):
     """Sample random multi-indices according to given probability TT-tensor.
 
     Args:
@@ -267,39 +281,55 @@ def sample_ind_rand(Y, m=1, unsert=1e-10):
 
     """
     d = len(Y)
+    # print(f"cores: {Y}")
     res = np.zeros((m, d), dtype=np.int32)
     phi = [None]*(d+1)
     phi[-1] = np.ones(1)
     for i in range(d-1, 0, -1):
         phi[i] = np.sum(Y[i], axis=1) @ phi[i+1]
 
-
     p = Y[0] @ phi[1]
+
     p = p.flatten()
-    p += unsert
-    p = np.maximum(p, 0)
-    p = p/p.sum()
-    ind = np.random.choice(Y[0].shape[1], m, p=p)
+    p += unsert / len(p)
+    if sq:
+        p = p*p
+    else:
+        p = np.abs(p)
+
+    try:
+        ind = np.random.choice(Y[0].shape[1], m, p=p/p.sum())
+    except Exception as e:
+        print(f"Вихожу! : {p}\n{e}")
+        exit(0)
+
     phi[0] = Y[0][0, ind, :] # ind here is an array even if m=1
     res[:, 0] = ind
     for i, c in enumerate(Y[1:], start=1):
         p = np.einsum('ma,aib,b->mi', phi[i-1], Y[i], phi[i+1])
-        for pi in p:
-            pi[np.isnan(pi)] = 0
-            pi[np.isinf(pi)] = 0
-            if pi.sum() == 0:
-                pi[:] = np.ones(len(pi))
-            pi /= np.max(np.abs(pi))
-            pi[np.isinf(pi)] = 0
-            pi[np.isnan(pi)] = 0
-            if pi.sum() == 0:
-                pi[:] = np.ones(len(pi))
+        p += unsert / p.shape[1]
+        if sq:
+            p = p*p
+        else:
+            p = np.abs(p)
 
-            pi[:] = np.maximum(pi, 0)
+        if False:
+            for pi in p:
+                pi[np.isnan(pi)] = 0
+                pi[np.isinf(pi)] = 0
+                if pi.sum() == 0:
+                    pi[:] = np.ones(len(pi))
+                pi /= np.max(np.abs(pi))
+                pi[np.isinf(pi)] = 0
+                pi[np.isnan(pi)] = 0
+                if pi.sum() == 0:
+                    pi[:] = np.ones(len(pi))
+
+                pi[:] = np.maximum(pi, 0)
         try:
             ind = np.array([np.random.choice(c.shape[1], p=pi/pi.sum()) for pi in p])
-        except:
-            print(p)
+        except Exception as e:
+            print(f"Вихожу! : {p}\n{e}")
             exit(0)
         res[:, i] = ind
         phi[i] = np.einsum("il,lij->ij", phi[i-1], c[:, ind])
@@ -307,7 +337,7 @@ def sample_ind_rand(Y, m=1, unsert=1e-10):
     return res
 
 
-def get_constrain_tens(n, idxs):
+def get_constrain_tens(n, idxs, norm=False):
     res = [np.ones([1, ni, 1]) for ni in n]
     for idx in idxs:
         if len(idx) > 0:
@@ -315,42 +345,86 @@ def get_constrain_tens(n, idxs):
             res = teneva.add(res, cur_t)
 
     # norm it
-    for G in res:
-        G /= G.shape[1]
+    if norm:
+        for G in res:
+            G /= G.shape[1]
 
     return res
 
+_="""
 def build_z(p, idxs):
     n = [len(pi) for pi in p]
     #d = len(p)
     #n = len(p[0])
     t = get_constrain_tens(n, idxs)
     return [np.einsum("ijk,j->ijk", ti, pi) for ti, pi in zip(t, p)]
+"""
 
-
-def norm_p(p, use_sum=False):
+def norm_p(p, use_sum=True, sq=True):
     for pi in p:
-        if use_sum:
-            pi /= pi.sum()
+        if sq:
+            pi[:] = np.abs(pi) / np.linalg.norm(pi)
         else:
-            pi[:] = softmax(pi)
+            if use_sum:
+                # pi[:] = np.maximum(pi, 0)
+                pi[:] = np.abs(pi)
+                pi /= pi.sum()
+            else:
+                pi[:] = softmax(pi)
 
 @numba.jit
 def sa_log(p, lr, k):
     for _ in range(k):
         p = p + lr/p
-        
+
     return p
-        
-def make_step(p, top_idx, lr=1e-4, norm=False, k_sa=10):
+
+@numba.jit
+def sa_log_constr(p, raw_grads, lr, k):
+    for _ in range(k):
+        grads = np.copy(raw_grads)
+        grads[p>1e-10] /= p[p>1e-10]
+        h = grads - (grads @ p)*p
+        hn = np.linalg.norm(h)
+        if hn < 1e-8:
+            return p
+        h /= hn
+        p = p*np.cos(lr) + h*np.sin(lr)
+
+    return p
+
+def make_step_constr(p, top_idx, lr=1e-4, norm=True, k_sa=10):
+    top_idx = np.asarray(top_idx)
+    norm_p(p, sq=True)
+    # p[:] = np.abs(p) / np.linalg.norm(p)
+    for pi, good_idxs in zip(p, top_idx.T):
+        unique, counts = np.unique(good_idxs, return_counts=True)
+        grads = np.zeros_like(pi)
+        for u, step in zip(unique, counts):
+            grads[u] = step
+
+        pi_old = np.copy(pi)
+        pi[:] = sa_log_constr(pi, grads, lr, k_sa)
+        if np.any(np.isnan(pi)):
+            print(pi_old, grads, pi)
+            exit(0)
+        # print(pi, grads)
+
+
+    if norm: # useless!!
+        # p[:] = np.abs(p) / np.linalg.norm(p)
+        norm_p(p, sq=True)
+
+
+def make_step(p, top_idx, lr=1e-4, norm=True, k_sa=10):
     top_idx = np.asarray(top_idx)
     for pi, good_idxs in zip(p, top_idx.T):
         unique, counts = np.unique(good_idxs, return_counts=True)
         for u, step in zip(unique, lr*counts):
             pi[u] = sa_log(pi[u], step, k_sa)
             #pi[u] = sa_log(pi[u], lr, k_sa)
-            
-        
+
+
     if norm:
         norm_p(p)
 
@@ -368,14 +442,14 @@ def grads1r(p, top_idx):
     return res
 
         
-def _generate_initial1r(n, *, is_rand=True, noise_not_rand=1e-2):
+def _generate_initial1r(n, *, is_rand=True, noise_not_rand=1e-2, sq=True):
     """Build initial TT-tensor for probability."""
     if is_rand:
         Y = [np.random.random(size=ni) for ni in n]
     else:
         Y = [(1 + noise_not_rand*np.random.random(size=ni)) for ni in n] 
 
-    norm_p(Y)
+    norm_p(Y, sq=sq)
 
     return Y
 
@@ -387,6 +461,28 @@ def get_delta_index(p):
     return np.array([np.argmax(pi) for pi in p])
 
 
+def most_k_cache(cache, bad, k=100):
+    for i in cache:
+        j = i
+        break
+
+
+    K = len(cache)
+    all_I = np.empty([K, len(j)], dtype=int)
+    y = np.empty(K)
+
+    bad_set = set([tuple(i) for i in bad])
+
+    cnt = 0
+    for i, (X, Y) in enumerate(cache.items()):
+        if X in bad_set:
+            continue
+        all_I[i] = X
+        y[i] = Y
+        cnt += 1
+
+    idx = np.argsort(y[:cnt])
+    return all_I[idx[:k]]
 
 
 
