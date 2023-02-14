@@ -41,11 +41,15 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42,
     @jax.jit
     def optimize(P, I_cur):
         grads = loss_grad(P, I_cur)
-        res = [update_oth_Wood(P[0][0].T, grads[0][0].T, lr=lr).T[None, :, :] ]
+        # res = [update_oth_Wood(P[0][0].T, grads[0][0].T, lr=lr).T[None, :, :] ]
+        res = [update_oth_Wood(P[0].reshape(-1, 1), grads[0].reshape(-1, 1), lr=lr).reshape(*P[0].shape) ]
         for X, G in zip(P[1:], grads[1:]):
             r1, n1, r2 = X.shape
             core = update_oth_Wood(X.reshape(r1, n1*r2), G.reshape(r1, n1*r2), lr=lr)
             res.append(core.reshape(r1, n1, r2))
+
+        # jax.debug.print("🤯 {P} {G} {R} 🤯", P=P[0], G=grads[0], R=res[0])
+
 
         return res
 
@@ -179,7 +183,8 @@ def _likelihood_old(Y, I):
 def _likelihood(Y, I):
     d = len(Y)
 
-    G = np.sum(Y[0][0]**2, axis=1)
+    G = Y[0][0, :, :]
+    G = np.sum(G**2, axis=1)
     G /= G.sum() ##???? to remove?
 
     y = [G[I[0]]]
@@ -260,7 +265,14 @@ def _sample(Y, key):
     G = np.sum(Y[0][0]**2, axis=1)
     G /= G.sum()
 
+
+    # is_delta = np.zeros(d, dtype=np.int32)
+    is_delta = np.zeros(d)
+
     i = jax.random.choice(keys[0], np.arange(Y[0].shape[1]), p=G)
+    is_delta = is_delta.at[0].set(np.max(G))
+
+
     I = I.at[0].set(i)
 
     Z = Y[0][0, i, :]
@@ -271,12 +283,16 @@ def _sample(Y, key):
         G /= np.sum(G)
 
         i = jax.random.choice(keys[j], np.arange(Y[j].shape[1]), p=G)
+        is_delta = is_delta.at[j].set(np.max(G))
         I = I.at[j].set(i)
 
         Z = Z @ Y[j][:, i, :]
 
 
-    # jax.debug.print("🤯 {p} 🤯", p=I)
+    # jax.debug.print("🤯 {p} 🤯", p=is_delta)
+    # if is_delta.sum() == d:
+        # jax.debug.print("🤯 Converged to delta, index: {p} 🤯", p=I)
+
     return I
 
 
@@ -332,8 +348,6 @@ def update_oth(X, G, lr=1e-3):
 
 
 def update_oth_Wood(X, G, lr=1e-3):
-
-    # print(X.shape, G.shape)
     U = np.hstack([G, -X])
     V = np.vstack([X.T, G.T])
 
