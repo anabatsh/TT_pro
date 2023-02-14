@@ -20,6 +20,7 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42,
 
 
     # print(P[:3])
+    # print(P)
     # optim = optax.adam(lr)
     # state = optim.init(P)
 
@@ -192,6 +193,8 @@ def _likelihood(Y, I):
 
     Z = Y[0][0, I[0], :]
 
+    norms = []
+
     for j in range(1, d):
         G = np.einsum('r,riq->iq', Z, Y[j])
         G = np.sum(G**2, axis=1)
@@ -200,8 +203,11 @@ def _likelihood(Y, I):
         y.append(G[I[j]])
 
         Z = Z @ Y[j][:, I[j], :]
+        Zn = np.linalg.norm(Z)
+        norms.append(Zn)
+        Z /= Zn
 
-    return np.sum(np.log(np.array(y)))
+    return np.sum(np.log(np.array(y))) + np.sum(np.log(np.array(norms)))
 
 def _log(info, log=False, log_ind=False, is_new=False, is_end=False):
     """Print current optimization result to output."""
@@ -287,6 +293,8 @@ def _sample(Y, key):
         I = I.at[j].set(i)
 
         Z = Z @ Y[j][:, i, :]
+        Z /= np.linalg.norm(Z)
+        # jax.debug.print("🤯 {j}: {p} 🤯", j=j, p=Z)
 
 
     # jax.debug.print("🤯 {p} 🤯", p=is_delta)
