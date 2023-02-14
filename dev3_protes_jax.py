@@ -56,7 +56,9 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42,
 
     while True:
         rng, key = jax.random.split(rng)
-        I = sample(P, jax.random.split(key, k))
+        I, max_p = sample(P, jax.random.split(key, k))
+        if np.min(max_p) > 0.95: # empirical value
+            print("Всё, заело")
 
         y = f(I)
         y = np.array(y)
@@ -301,7 +303,7 @@ def _sample(Y, key):
     # if is_delta.sum() == d:
         # jax.debug.print("🤯 Converged to delta, index: {p} 🤯", p=I)
 
-    return I
+    return I, is_delta
 
 
 def _set_ref(P, info, I, ind, i_ref=None):
