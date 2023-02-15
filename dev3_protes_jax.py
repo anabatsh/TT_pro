@@ -5,7 +5,7 @@ from time import perf_counter as tpc
 
 
 
-def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu'):
+def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=7, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu'):
     time = tpc()
     info.update({'mod': mod, 'is_max': is_max, 'm': 0, 't': 0,
         'i_opt': None, 'y_opt': None, 'm_opt_list': [], 'y_opt_list': [],
@@ -20,7 +20,7 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42,
 
 
     # print(P[:3])
-    # print(P)
+    #print(P)
     # optim = optax.adam(lr)
     # state = optim.init(P)
 
@@ -42,14 +42,14 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42,
     @jax.jit
     def optimize(P, I_cur):
         grads = loss_grad(P, I_cur)
-        # res = [update_oth_Wood(P[0][0].T, grads[0][0].T, lr=lr).T[None, :, :] ]
-        res = [update_oth_Wood(P[0].reshape(-1, 1), grads[0].reshape(-1, 1), lr=lr).reshape(*P[0].shape) ]
+        # res = [update_orth_Wood(P[0][0].T, grads[0][0].T, lr=lr).T[None, :, :] ]
+        res = [update_orth_Wood(P[0].reshape(-1, 1), grads[0].reshape(-1, 1), lr=lr).reshape(*P[0].shape) ]
         for X, G in zip(P[1:], grads[1:]):
             r1, n1, r2 = X.shape
-            core = update_oth_Wood(X.reshape(r1, n1*r2), G.reshape(r1, n1*r2), lr=lr)
+            core = update_orth_Wood(X.reshape(r1, n1*r2).T, G.reshape(r1, n1*r2).T, lr=lr).T
             res.append(core.reshape(r1, n1, r2))
 
-        # jax.debug.print("🤯 {P} {G} {R} 🤯", P=P[0], G=grads[0], R=res[0])
+        #jax.debug.print("🤯 {P} {G} {R} 🤯", P=P[0], G=grads[0], R=res[0])
 
 
         return res
@@ -57,8 +57,11 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42,
     while True:
         rng, key = jax.random.split(rng)
         I, max_p = sample(P, jax.random.split(key, k))
-        if np.min(max_p) > 0.95: # empirical value
+        Iu = np.unique(I, axis=0)
+        if np.min(max_p) > 0.95 and Iu.shape[0] == 1: # thr p is an empirical value
+            
             print("Всё, заело")
+            #exit(0)
 
         y = f(I)
         y = np.array(y)
@@ -209,7 +212,7 @@ def _likelihood(Y, I):
         norms.append(Zn)
         Z /= Zn
 
-    return np.sum(np.log(np.array(y))) + np.sum(np.log(np.array(norms)))
+    return np.sum(np.log(np.array(y))) + np.sum(np.log(np.array(norms[:-1])))
 
 def _log(info, log=False, log_ind=False, is_new=False, is_end=False):
     """Print current optimization result to output."""
@@ -349,7 +352,7 @@ def _orthogonalize(Z, use_stab=False, orht_fst=True):
     return Z
 
 
-def update_oth(X, G, lr=1e-3):
+def update_orth(X, G, lr=1e-3):
     A = G @ X.T - X @ G.T
     I = np.eye(A.shape[0])
     Q = np.linalg.inv(I + lr/2*A) @ (I - lr/2*A)
@@ -357,7 +360,7 @@ def update_oth(X, G, lr=1e-3):
     return Q @ X
 
 
-def update_oth_Wood(X, G, lr=1e-3):
+def update_orth_Wood(X, G, lr=1e-3):
     U = np.hstack([G, -X])
     V = np.vstack([X.T, G.T])
 
