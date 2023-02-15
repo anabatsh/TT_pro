@@ -5,8 +5,9 @@ from .bm_opt_tens import BmOptTens
 
 
 class BmOptTensMmul(BmOptTens):
-    def __init__(self, size=2, rank=7, only2=False, name='mmul'):
-        E = [-1, 0, 1]    # Possible items of the factor matrices
+    def __init__(self, size=2, rank=7, only2=False, name='mmul', E=None):
+        if E is None:
+            E = [-1, 0, 1]    # Possible items of the factor matrices
         T = tensor_generate(size, size, size)
         d = (2 if only2 else 3) * T.shape[0] * rank
 

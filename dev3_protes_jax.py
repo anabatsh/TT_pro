@@ -2,12 +2,12 @@ import jax
 import jax.numpy as np
 import optax
 from time import perf_counter as tpc
+import numpy as onp
+import teneva
 
-
-
-def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=7, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu'):
+def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=5, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu', K_rebuild=300):
     time = tpc()
-    info.update({'mod': mod, 'is_max': is_max, 'm': 0, 't': 0,
+    info.update({'mod': mod, 'is_max': is_max, 'm': 0, 't': 0, 'M_cache': 0,
         'i_opt': None, 'y_opt': None, 'm_opt_list': [], 'y_opt_list': [],
         'm_ref_list': [],
         'p_ref_list': [], 'p_opt_ref_list': [], 'p_top_ref_list': []})
@@ -17,6 +17,7 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=7, P=None, seed=42,
     if P is None:
         rng, key = jax.random.split(rng)
         P = _generate_initial(n, r, key)
+        rng, keyP = jax.random.split(rng)
 
 
     # print(P[:3])
@@ -24,7 +25,7 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=7, P=None, seed=42,
     # optim = optax.adam(lr)
     # state = optim.init(P)
 
-    sample = jax.jit(jax.vmap(_sample, (None, 0)))
+    sample = jax.jit(jax.vmap(_sample, (None, 0, None)))
     likelihood = jax.jit(jax.vmap(_likelihood, (None, 0)))
 
     @jax.jit
@@ -54,18 +55,50 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=7, P=None, seed=42,
 
         return res
 
+    peaks = []
+    shapes = [pi.shape[1] for pi in P] 
+
+    idxs_cores = get_constrain_tens(shapes, peaks)
+    cache = {}
+
     while True:
         rng, key = jax.random.split(rng)
-        I, max_p = sample(P, jax.random.split(key, k))
+        I, max_p = sample(P, jax.random.split(key, k), idxs_cores)
         Iu = np.unique(I, axis=0)
         if np.min(max_p) > 0.95 and Iu.shape[0] == 1: # thr p is an empirical value
-            
-            print("Всё, заело")
+            peaks.append(Iu[0])
+            idxs_cores = get_constrain_tens(shapes, peaks)
+
+            I_big_trn = most_k_cache(cache, [], k=K_rebuild + len(peaks))
+            # P = _generate_initial1r(n, is_rand=is_rand_init, sq=sq)
+            keyP, key = jax.random.split(keyP)
+            P =  _generate_initial(n, r, key)
+            for _ in range(k_gd):
+                P = optimize(P, I_big_trn)
+
+            print(f"Всё, заело, m {info['m']} | cache {info['M_cache']} |  number of peak: {len(peaks)}, idx: \n {peaks[-1]}, val: {cache[tuple(peaks[-1].tolist())]}")
             #exit(0)
 
-        y = f(I)
-        y = np.array(y)
-        info['m'] += y.shape[0]
+
+        #####
+        # print(tuple(I[0]))
+        # I_new = np.array([np.array(i) for i in I.tolist() if tuple(i) not in cache])
+        I_new = [i for i in I.tolist() if tuple(i) not in cache]
+        # y = f(I)
+        # y = np.array(y)
+        # info['m'] += y.shape[0]
+
+        if len(I_new) > 0:
+            Y_new = f(np.array(I_new))
+            for i, y in zip(I_new, Y_new):
+                cache[tuple(i)] = y
+
+        info['m'] += len(I_new)
+        info['M_cache'] += len(I) - len(I_new)
+
+        y = np.array([cache[tuple(i)] for i in I.tolist()])
+
+        #######
 
         is_new = _check(I, y, info)
 
@@ -119,7 +152,8 @@ def _generate_initial(n, r, key):
     for j in range(d):
         Y.append(jax.random.uniform(keys[j], (r[j], n[j], r[j+1])))
 
-    return _orthogonalize(Y, use_stab=True, orht_fst=True)
+    return _orthogonalize(Y, use_stab=False, orht_fst=True)
+    # return _orthogonalize(Y, use_stab=True, orht_fst=True)
 
 
 def _get(Y, i):
@@ -191,7 +225,7 @@ def _likelihood(Y, I):
 
     G = Y[0][0, :, :]
     G = np.sum(G**2, axis=1)
-    G /= G.sum() ##???? to remove?
+    # G /= G.sum() ##???? to remove?
 
     y = [G[I[0]]]
 
@@ -203,7 +237,7 @@ def _likelihood(Y, I):
     for j in range(1, d):
         G = np.einsum('r,riq->iq', Z, Y[j])
         G = np.sum(G**2, axis=1)
-        G /= np.sum(G) ##???? to remove?
+        # G /= np.sum(G) ##???? to remove?
 
         y.append(G[I[j]])
 
@@ -211,6 +245,8 @@ def _likelihood(Y, I):
         Zn = np.linalg.norm(Z)
         norms.append(Zn)
         Z /= Zn
+
+    # jax.debug.print("🤯 Y: {Y} norms: {n} 🤯", Y=Y[:3], n=norms)
 
     return np.sum(np.log(np.array(y))) + np.sum(np.log(np.array(norms[:-1])))
 
@@ -266,9 +302,12 @@ def _sample_abs(Y, key):
 
     return I
 
-def _sample(Y, key):
+def _sample(Y, key, cnstr):
     """Generate sample according to given probability TT-tensor Y."""
     d = len(Y)
+
+    if cnstr is not None:
+        Y = mul(Y, cnstr)
 
     keys = jax.random.split(key, d)
     I = np.zeros(d, dtype=np.int32)
@@ -327,26 +366,18 @@ def _orthogonalize(Z, use_stab=False, orht_fst=True):
         Q, R = np.linalg.qr(G2.T, mode='reduced')
         R = R.T
         Q = Q.T
-        # print(Z[i].shape)
-        # print(G2.T.shape)
-        # print(R.shape)
-        # print(Q.shape)
         Z[i] = np.reshape(Q, (Q.shape[0], n2, r3), order='F')
 
         r1, n1, r2 = Z[i-1].shape
         G1 = np.reshape(Z[i-1], (r1 * n1, r2), order='F')
-        G1 = G1 @ R
+        G1 = G1 @ (R / np.linalg.norm(R))
         Z[i-1] = np.reshape(G1, (r1, n1, G1.shape[1]), order='F')
         if use_stab:
             Z[i-1], _ = _core_stab(Z[i-1])
 
 
-
     # print(Z[0])
     if orht_fst:
-        # for i in range(Z[0].shape[1]):
-            # Z[0] = Z[0].at[0, i].set(Z[0][0, i] / np.linalg.norm(Z[0][0, i]))
-
         Z[0] /= np.linalg.norm(Z[0])
 
     return Z
@@ -396,3 +427,62 @@ def _core_stab(G, p0=0, thr=1.E-100):
     Q = G / 2.**p
 
     return Q, p0 + p
+
+
+
+def get_constrain_tens(n, idxs):
+    res = [onp.ones([1, ni, 1]) for ni in n]
+    for idx in idxs:
+        idx = onp.array(list(idx))
+        if len(idx) > 0:
+            cur_t = teneva.tensor_delta(n, idx, -1)
+            res = teneva.add(res, cur_t)
+
+    # teneva.show(res)
+    return [np.array(i) for i in res]
+
+
+def mul_bew(Y1, Y2):
+    return [G1[:, None, :, :, None] * G2[None, :, :, None, :].reshape(
+           [G1.shape[0]*G2.shape[0], -1, G1.shape[-1]*G2.shape[-1]])
+               for G1, G2 in zip(Y1, Y2)]
+
+
+
+
+def mul(Y1, Y2):
+    Y = []
+    for G1, G2 in zip(Y1, Y2):
+        # print(G1.shape, G2.shape)
+        G = G1[:, None, :, :, None] * G2[None, :, :, None, :]
+        G = G.reshape([G1.shape[0]*G2.shape[0], -1, G1.shape[-1]*G2.shape[-1]])
+        Y.append(G)
+
+    return Y
+
+def most_k_cache(cache, bad, k=100):
+    for i in cache:
+        j = i
+        break
+
+
+    K = len(cache)
+    all_I = np.empty([K, len(j)], dtype=np.int32)
+    y = np.empty(K)
+
+    bad_set = set([tuple(i) for i in bad])
+
+    cnt = 0
+    for i, (X, Y) in enumerate(cache.items()):
+        if X in bad_set:
+            continue
+        # all_I[i] = X
+        # y[i] = Y
+        all_I = all_I.at[i].set(X)
+        y = y.at[i].set(Y)
+        cnt += 1
+
+    idx = np.argsort(y[:cnt])
+    return all_I[idx[:k]]
+
+
