@@ -5,7 +5,7 @@ from .bm_opt_tens import BmOptTens
 
 
 class BmOptTensWall(BmOptTens):
-    def __init__(self, d=5, n=10, name='wall'):
+    def __init__(self, d=10, n=50, name='wall'):
         super().__init__(d, n, name)
         self.desc = 'Tensor of the special form'
 
