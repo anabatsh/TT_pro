@@ -1,11 +1,9 @@
---> Computations | m=1.0e+02
+--> Computations | m=1.0e+04
 ------------------------------------------------------------------------
 BM: topopt                         | DIMS =  4096 | <MODE SIZE> =    2.0
   [ Topology optimization. ]
 ========================================================================
 
 
-Baseline solver :
-
-
 PROTES solver :
+topopt-4096D         >>> PRO  7.28e+02 | 

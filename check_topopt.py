@@ -3,7 +3,7 @@ import numpy as np
 
 from bm_opt_tens import *
 from bs_opt_tens import *
-from protes_jax import protes_jax
+from ppp import protes_jax_fast
 from utils import Log
 from utils import folder_ensure
 
@@ -20,7 +20,7 @@ bs_all = [
 ]
 
 
-def check(m=1.E+2, with_bs=False, with_log=True):
+def check(m=1.E+4, with_bs=False, with_log=True):
     log = Log(f'result/logs/check_topopt.txt')
     log(f'--> Computations | m={m:-7.1e}')
 
@@ -30,14 +30,17 @@ def check(m=1.E+2, with_bs=False, with_log=True):
     name = f'{bm.name}-{bm.d}D'
     text = name + ' ' * max(0, 20-len(name)) +  ' >>> '
 
-    log('\nBaseline solver :')
-    i_opt_bm = bm.optimize_bm()
-    bm.plot(i_opt_bm, name='Baseline', fpath='result/topopt/topopt_bm.png')
-    log('')
+    #log('\nBaseline solver :')
+    #i_opt_bm = bm.optimize_bm()
+    #bm.plot(i_opt_bm, name='Baseline', fpath='result/topopt/topopt_bm.png')
+    #log('')
 
     log('\nPROTES solver :')
-    i_opt, y_opt = protes_jax(bm.f, bm.n, m, log=with_log)
-    bm.plot(i_opt, name='PROTES', fpath='result/topopt/topopt.png')
+    def cb(P, info):
+        bm.plot(info['i_opt'], name='PROTES', fpath='result/topopt/topopt.png')
+
+    i_opt, y_opt = protes_jax_fast(bm.f, bm.n, m, log=with_log, cb=cb)
+    #bm.plot(i_opt, name='PROTES', fpath='result/topopt/topopt.png')
     text += f'PRO {y_opt:-9.2e} | '
 
     if with_bs:
