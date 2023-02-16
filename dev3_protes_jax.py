@@ -442,7 +442,7 @@ def get_constrain_tens(n, idxs):
     return [np.array(i) for i in res]
 
 
-def mul_bew(Y1, Y2):
+def mul_new(Y1, Y2):
     return [G1[:, None, :, :, None] * G2[None, :, :, None, :].reshape(
            [G1.shape[0]*G2.shape[0], -1, G1.shape[-1]*G2.shape[-1]])
                for G1, G2 in zip(Y1, Y2)]
@@ -453,7 +453,6 @@ def mul_bew(Y1, Y2):
 def mul(Y1, Y2):
     Y = []
     for G1, G2 in zip(Y1, Y2):
-        # print(G1.shape, G2.shape)
         G = G1[:, None, :, :, None] * G2[None, :, :, None, :]
         G = G.reshape([G1.shape[0]*G2.shape[0], -1, G1.shape[-1]*G2.shape[-1]])
         Y.append(G)
@@ -473,13 +472,11 @@ def most_k_cache(cache, bad, k=100):
     bad_set = set([tuple(i) for i in bad])
 
     cnt = 0
-    for i, (X, Y) in enumerate(cache.items()):
+    for X, Y in cache.items():
         if X in bad_set:
             continue
-        # all_I[i] = X
-        # y[i] = Y
-        all_I = all_I.at[i].set(X)
-        y = y.at[i].set(Y)
+        all_I = all_I.at[cnt].set(X)
+        y = y.at[cnt].set(Y)
         cnt += 1
 
     idx = np.argsort(y[:cnt])
