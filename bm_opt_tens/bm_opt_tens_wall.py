@@ -12,9 +12,9 @@ class BmOptTensWall(BmOptTens):
         self.i_min = np.zeros(self.d)
 
     def _f(self, i):
-        if len(np.where(i == self.i_min)) == self.d:
+        if len(np.where(i == self.i_min)[0]) == self.d:
             return 0.
-        elif len(np.where(i == self.i_min)) > 0:
+        elif len(np.where(i == self.i_min)[0]) > 0:
             return self.d * 10
         else:
             return i[0]
