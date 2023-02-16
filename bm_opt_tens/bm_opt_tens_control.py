@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 
 try:
@@ -62,5 +63,7 @@ class BmOptTensControl(BmOptTens):
 
         except Exception as e:
             res = 1.E+50
+        finally:
+            os.system('find /tmp -maxdepth 1 -type d -name "*model*" -exec rm -fr {} \;')
 
         return res
