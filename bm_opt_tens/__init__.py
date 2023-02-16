@@ -20,3 +20,4 @@ from .bm_opt_tens_max_cut import BmOptTensMaxCut
 from .bm_opt_tens_mmul import BmOptTensMmul
 from .bm_opt_tens_mvc import BmOptTensMvc
 from .bm_opt_tens_topopt import BmOptTensTopopt
+from .bm_opt_tens_wall import BmOptTensWall
