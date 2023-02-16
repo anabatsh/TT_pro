@@ -44,7 +44,6 @@ class BmOptTensMmul(BmOptTens):
 
     def recover(self, i):
         x = ind_to_poi(i, self.E)
-        print(x)
 
         if self.only2:
             U, V = factor_from_poi(x, self.rank, True)
