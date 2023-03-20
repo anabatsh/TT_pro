@@ -66,7 +66,7 @@ bs_all = [
 ]
 
 
-def check(M=1.E+4, use_jax=True, with_bs=True, with_log=True):
+def check(M=1.E+4, *, r=2, k_gd=100, use_jax=True, with_bs=True, with_log=True):
     log = Log(f'result/logs/check_orth.txt')
     log(f'--> Computations | M={M:-7.1e}')
 
@@ -78,17 +78,17 @@ def check(M=1.E+4, use_jax=True, with_bs=True, with_log=True):
 
         info = dict()
         opt = protes_gleb_rej
-        i_opt, y_opt = opt(bm.f, bm.n, M, log=with_log, info=info, T=0.5)
+        i_opt, y_opt = opt(bm.f, bm.n, M, log=with_log, info=info, T=0.5, r=r, k_gd=k_gd)
         text += f'GRY {y_opt:-9.2e} needed M: {info["m_opt_list"]} | '
 
         info = dict()
         opt = protes_gleb
-        i_opt, y_opt = opt(bm.f, bm.n, M, log=with_log, info=info)
+        i_opt, y_opt = opt(bm.f, bm.n, M, log=with_log, info=info, r=r)
         text += f'GMY {y_opt:-9.2e} needed M: {info["m_opt_list"]} | '
 
         info = dict()
         opt = protes_jax if use_jax else protes
-        i_opt, y_opt = opt(bm.f, bm.n, M, log=with_log, info=info)
+        i_opt, y_opt = opt(bm.f, bm.n, M, log=with_log, info=info, r=r)
         text += f'OWN {y_opt:-9.2e} needed M: {info["m_opt_list"]} | '
 
         if with_bs:
@@ -105,12 +105,12 @@ if __name__ == '__main__':
     folder_ensure('result')
     folder_ensure('result/logs')
 
-    test = False
-    if rest:
-        check()
+    test = True
+    if test:
+        check(k_gd=20)
     else:
         bm_all = [BmOptTensMmul(size=2, rank=7, only2=True, E = [-1, 0, 1])]
-        check(M=1e8)
+        check(M=1e8, r=2, k_gd=10)
 
 
 

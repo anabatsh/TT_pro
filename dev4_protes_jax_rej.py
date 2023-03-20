@@ -130,8 +130,8 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., P=None, seed=42, info
             prev = (I0, y0, log_like_0)
 
 
-        if was_accept: # accept
-        # if True:
+        # if was_accept: # accept
+        if True:
             I = np.array([I0])
             for _ in range(k_gd):
                 P = optimize(P, I)
