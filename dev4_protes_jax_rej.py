@@ -5,7 +5,7 @@ from time import perf_counter as tpc
 import numpy as onp
 import teneva
 
-def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=2, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu', K_rebuild=300):
+def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu', K_rebuild=300):
     time = tpc()
     info.update({'mod': mod, 'is_max': is_max, 'm': 0, 't': 0, 'M_cache': 0,
         'i_opt': None, 'y_opt': None, 'm_opt_list': [], 'y_opt_list': [],
@@ -20,11 +20,6 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=2, P=None, seed=42,
         rng, keyP = jax.random.split(rng)
 
 
-    # print(P[:3])
-    #print(P)
-    # optim = optax.adam(lr)
-    # state = optim.init(P)
-
     sample = jax.jit(jax.vmap(_sample, (None, 0, None)))
     likelihood = jax.jit(jax.vmap(_likelihood, (None, 0)))
 
@@ -34,16 +29,9 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=2, P=None, seed=42,
 
     loss_grad = jax.grad(loss)
 
-    def optimize_old(P, I_cur, state):
-        grads = loss_grad(P, I_cur)
-        updates, state = optim.update(grads, state)
-        P = jax.tree_util.tree_map(lambda u, p: p + u, updates, P)
-        return P, state
-
     @jax.jit
     def optimize(P, I_cur):
         grads = loss_grad(P, I_cur)
-        # res = [update_orth_Wood(P[0][0].T, grads[0][0].T, lr=lr).T[None, :, :] ]
         res = [update_orth_Wood(P[0].reshape(-1, 1), grads[0].reshape(-1, 1), lr=lr).reshape(*P[0].shape) ]
         for X, G in zip(P[1:], grads[1:]):
             r1, n1, r2 = X.shape
@@ -61,12 +49,19 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=2, P=None, seed=42,
     idxs_cores = get_constrain_tens(shapes, peaks)
     cache = {}
 
+    # TODO hardcore it!!!
+    k = 1
+
+    prev = None
+    was_accept = True
+
     while True:
         rng, key = jax.random.split(rng)
         I, max_p = sample(P, jax.random.split(key, k), idxs_cores)
-        Iu = np.unique(I, axis=0)
-        if np.min(max_p) > 0.95 and Iu.shape[0] == 1: # thr p is an empirical value
-            peaks.append(Iu[0])
+        # Iu = np.unique(I, axis=0)
+        # Iu = I
+        if np.min(max_p) > 0.95: # thr p is an empirical value
+            peaks.append(I[0])
             idxs_cores = get_constrain_tens(shapes, peaks)
 
             I_big_trn = most_k_cache(cache, [], k=K_rebuild + len(peaks))
@@ -81,12 +76,7 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=2, P=None, seed=42,
 
 
         #####
-        # print(tuple(I[0]))
-        # I_new = np.array([np.array(i) for i in I.tolist() if tuple(i) not in cache])
         I_new = [i for i in I.tolist() if tuple(i) not in cache]
-        # y = f(I)
-        # y = np.array(y)
-        # info['m'] += y.shape[0]
 
         if len(I_new) > 0:
             Y_new = f(np.array(I_new))
@@ -105,11 +95,48 @@ def protes_jax(f, n, m, k=50, k_top=5, k_gd=100, lr=1.E-4, r=2, P=None, seed=42,
         if info['m'] >= m:
             break
 
-        ind = np.argsort(y, kind='stable')
-        ind = (ind[::-1] if is_max else ind)[:k_top]
+        # ind = np.argsort(y, kind='stable')
+        # ind = (ind[::-1] if is_max else ind)[:k_top]
 
-        for _ in range(k_gd):
-            P = optimize(P, I[ind, :])
+        I0 = I[0]
+        y0 = y[0]
+
+        log_like_0 = likelihood(P, I)[0]
+
+        ## rejection!
+        if prev is not None:
+            # print(prev)
+            I_prev, y_prev, log_like_prev = prev
+            f_prev = cache[tuple(I_prev.tolist())]
+            f0 = cache[tuple(I0.tolist())]
+
+            pi_x_new_div_x_log = -(f0 - f_prev)/T
+            pi_star_x_div_new_x_log = log_like_prev - log_like_0
+            # print(pi_star_x_div_new_x_log)
+            pi_star_x_div_new_x_log = 0
+
+            alpha = min(np.exp(pi_x_new_div_x_log + pi_star_x_div_new_x_log), 1.)
+
+            rng, key = jax.random.split(rng)
+            was_accept = jax.random.uniform(key) < alpha
+            if was_accept: # accept
+                prev = (I0, y0, log_like_0)
+                # print("A")
+            else:
+                I0, y0, log_like_0 = prev
+                # print("R")
+
+        else:
+            prev = (I0, y0, log_like_0)
+
+
+        if was_accept: # accept
+        # if True:
+            I = np.array([I0])
+            for _ in range(k_gd):
+                P = optimize(P, I)
+
+
 
         if i_ref is not None: # For debug only
             _set_ref(P, info, I, ind, i_ref)
