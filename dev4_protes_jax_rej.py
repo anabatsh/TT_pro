@@ -462,7 +462,7 @@ def get_constrain_tens(n, idxs):
     for idx in idxs:
         idx = onp.array(list(idx))
         if len(idx) > 0:
-            cur_t = teneva.tensor_delta(n, idx, -1)
+            cur_t = teneva.delta(n, idx, -1)
             res = teneva.add(res, cur_t)
 
     # teneva.show(res)
