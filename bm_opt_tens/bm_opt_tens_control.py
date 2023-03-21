@@ -64,6 +64,6 @@ class BmOptTensControl(BmOptTens):
         except Exception as e:
             res = 1.E+50
         finally:
-            os.system('find /tmp -maxdepth 1 -type d -name "*model*" -exec rm -fr {} \;')
+            os.system('find /tmp -maxdepth 1 -type d  -user $USER  -name "*model*" -exec rm -fr {} >/dev/null 2>/dev/null \;')
 
         return res
