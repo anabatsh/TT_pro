@@ -5,6 +5,36 @@ from time import perf_counter as tpc
 import numpy as onp
 import teneva
 
+import os
+from datetime import datetime
+
+def save_raw_data(**data):
+    now = datetime.now().strftime("%d_%m_%Y-%H:%M:%S")
+
+    np.savez(f"raw_data_{os.getpid()}_{now}", **data)
+
+def cached_func(f, info):
+    cache = dict()
+    def fn(I):
+        if x.ndim > 1:
+            I_new = [i for i in I.tolist() if tuple(i) not in cache]
+
+            if len(I_new) > 0:
+                Y_new = f(np.array(I_new))
+                for i, y in zip(I_new, Y_new):
+                    cache[tuple(i)] = y
+
+            info['m'] += len(I_new)
+            info['M_cache'] += len(I) - len(I_new)
+
+            y = np.array([cache[tuple(i)] for i in I.tolist()])
+            return y
+        else: # just 1 point
+            print("Not implemented")
+    fn.cache = cache
+    return fn
+
+
 def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu', K_rebuild=300):
     time = tpc()
     info.update({'mod': mod, 'is_max': is_max, 'm': 0, 't': 0, 'M_cache': 0,
@@ -47,7 +77,8 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
     shapes = [pi.shape[1] for pi in P] 
 
     idxs_cores = get_constrain_tens(shapes, peaks)
-    cache = {}
+
+    f = cached_func(f, info)
 
     # TODO hardcore it!!!
     k = 1
@@ -58,36 +89,38 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
     while True:
         rng, key = jax.random.split(rng)
         I, max_p = sample(P, jax.random.split(key, k), idxs_cores)
+        if I[0].tolist() in peaks:
+            save_raw_data(I0=I[0].tolist(), P=P, idxs_cores=idxs_cores, reason="Sample")
+            print("Fignya")
+
         # Iu = np.unique(I, axis=0)
         # Iu = I
         if np.min(max_p) > 0.95: # thr p is an empirical value
-            peaks.append(I[0])
-            idxs_cores = get_constrain_tens(shapes, peaks)
+            pI = I[0].tolist()
+            if pI in peaks:
+                save_raw_data(I0=I[0].tolist(), P=P, idxs_cores=idxs_cores, reason="p")
+                print("Fignya 2")
+            else:
+                peaks.append(pI)
 
-            I_big_trn = most_k_cache(cache, [], k=K_rebuild + len(peaks))
+            idxs_cores = get_constrain_tens(shapes, peaks)
+            I_big_trn = most_k_cache(f.cache, [], k=K_rebuild + len(peaks))
             # P = _generate_initial1r(n, is_rand=is_rand_init, sq=sq)
             keyP, key = jax.random.split(keyP)
             P =  _generate_initial(n, r, key)
             for _ in range(k_gd):
                 P = optimize(P, I_big_trn)
 
-            print(f"Всё, заело, m {info['m']} | cache {info['M_cache']} |  number of peak: {len(peaks)}, idx: \n {peaks[-1]}, val: {cache[tuple(peaks[-1].tolist())]}")
+
+            val_p =  f(np.array([ peaks[-1] ]))
+            print(f"Всё, заело, m {info['m']} | cache {info['M_cache']} |  number of peak: {len(peaks)}, idx: \n {peaks[-1]}, val: {val_p}")
+            print(f"cur peaks: {peaks}")
+            continue
             #exit(0)
 
 
         #####
-        I_new = [i for i in I.tolist() if tuple(i) not in cache]
-
-        if len(I_new) > 0:
-            Y_new = f(np.array(I_new))
-            for i, y in zip(I_new, Y_new):
-                cache[tuple(i)] = y
-
-        info['m'] += len(I_new)
-        info['M_cache'] += len(I) - len(I_new)
-
-        y = np.array([cache[tuple(i)] for i in I.tolist()])
-
+        y = f(I)
         #######
 
         is_new = _check(I, y, info)
@@ -107,8 +140,8 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
         if prev is not None:
             # print(prev)
             I_prev, y_prev, log_like_prev = prev
-            f_prev = cache[tuple(I_prev.tolist())]
-            f0 = cache[tuple(I0.tolist())]
+            f_prev = f.cache[tuple(I_prev.tolist())]
+            f0 = f.cache[tuple(I0.tolist())]
 
             pi_x_new_div_x_log = -(f0 - f_prev)/T
             pi_star_x_div_new_x_log = log_like_prev - log_like_0

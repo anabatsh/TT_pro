@@ -110,7 +110,7 @@ if __name__ == '__main__':
         check(k_gd=20)
     else:
         bm_all = [BmOptTensMmul(size=2, rank=7, only2=True, E = [-1, 0, 1])]
-        check(M=1e8, r=2, k_gd=10)
+        check(M=1e8, r=2, k_gd=20)
 
 
 
