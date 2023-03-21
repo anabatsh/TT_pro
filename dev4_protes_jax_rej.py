@@ -5,7 +5,7 @@ from time import perf_counter as tpc
 import numpy as onp
 import teneva
 
-def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu', K_rebuild=300):
+def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu', K_rebuild=300):
     time = tpc()
     info.update({'mod': mod, 'is_max': is_max, 'm': 0, 't': 0, 'M_cache': 0,
         'i_opt': None, 'y_opt': None, 'm_opt_list': [], 'y_opt_list': [],
@@ -130,8 +130,8 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., P=None, seed=42, info
             prev = (I0, y0, log_like_0)
 
 
-        # if was_accept: # accept
-        if True:
+        # if was_accept:
+        if how_to_upd or was_accept:
             I = np.array([I0])
             for _ in range(k_gd):
                 P = optimize(P, I)
