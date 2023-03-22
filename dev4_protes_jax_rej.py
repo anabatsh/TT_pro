@@ -16,7 +16,7 @@ def save_raw_data(**data):
 def cached_func(f, info):
     cache = dict()
     def fn(I):
-        if x.ndim > 1:
+        if I.ndim > 1:
             I_new = [i for i in I.tolist() if tuple(i) not in cache]
 
             if len(I_new) > 0:
@@ -368,6 +368,8 @@ def _sample(Y, key, cnstr):
 
     if cnstr is not None:
         Y = mul(Y, cnstr)
+        Y = _orthogonalize(Y, use_stab=False, orht_fst=True)
+
 
     keys = jax.random.split(key, d)
     I = np.zeros(d, dtype=np.int32)
