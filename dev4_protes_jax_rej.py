@@ -56,7 +56,7 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
         P = _generate_initial(n, r, key)
         rng, keyP = jax.random.split(rng)
 
-    sample = jax.jit(jax.vmap(_sample, (None, 0, None)))
+    sample = jax.jit(jax.vmap(_sample, (None, 0)))
     likelihood = jax.jit(jax.vmap(_likelihood, (None, 0)))
 
     @jax.jit
