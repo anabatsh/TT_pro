@@ -35,6 +35,13 @@ def cached_func(f, info):
     return fn
 
 
+def apply_const(Y, cnstr):
+    if cnstr is not None:
+        Y = mul(Y, cnstr)
+
+    Y = _orthogonalize(Y, use_stab=False, orht_fst=True)
+    return Y
+
 def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu', K_rebuild=300):
     time = tpc()
     info.update({'mod': mod, 'is_max': is_max, 'm': 0, 't': 0, 'M_cache': 0,
@@ -48,7 +55,6 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
         rng, key = jax.random.split(rng)
         P = _generate_initial(n, r, key)
         rng, keyP = jax.random.split(rng)
-
 
     sample = jax.jit(jax.vmap(_sample, (None, 0, None)))
     likelihood = jax.jit(jax.vmap(_likelihood, (None, 0)))
@@ -85,20 +91,30 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
 
     prev = None
     was_accept = True
+    history_sample = []
+    history_sample_length = 10
 
     while True:
         rng, key = jax.random.split(rng)
-        I, max_p = sample(P, jax.random.split(key, k), idxs_cores)
-        if I[0].tolist() in peaks:
+        # I, max_p = sample(P, jax.random.split(key, k), idxs_cores)
+        I, max_p = sample(all_cores, jax.random.split(key, k))
+
+        I0_list = I[0].tolist()
+        
+        history_sample.append(I0_list)
+        history_sample = history_sample[-history_sample_length:]
+
+        if I0_list in peaks:
             save_raw_data(I0=I[0].tolist(), P=P, idxs_cores=idxs_cores, reason="Sample")
             print("Fignya")
 
         # Iu = np.unique(I, axis=0)
         # Iu = I
-        if np.min(max_p) > 0.95: # thr p is an empirical value
-            pI = I[0].tolist()
+        # if np.min(max_p) > 0.95: # thr p is an empirical value
+        if len(history_sample) == history_sample_length and onp.unique(history_sample, axis=0).shape[0] == 1:
+            pI = I0_list
             if pI in peaks:
-                save_raw_data(I0=I[0].tolist(), P=P, idxs_cores=idxs_cores, reason="p")
+                save_raw_data(I0=I0_list, P=P, idxs_cores=idxs_cores, reason="p")
                 print("Fignya 2")
             else:
                 peaks.append(pI)
@@ -111,9 +127,10 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
             for _ in range(k_gd):
                 P = optimize(P, I_big_trn)
 
+            all_cores = apply_const(P, cnstr=idxs_cores)
 
             val_p =  f(np.array([ peaks[-1] ]))
-            print(f"Всё, заело, m {info['m']} | cache {info['M_cache']} |  number of peak: {len(peaks)}, idx: \n {peaks[-1]}, val: {val_p}")
+            print(f"Всё, заело, m {info['m']} | cache {info['M_cache']} |  number of peak: {len(peaks)} | max_p : {np.min(max_p)} ,  idx: \n [{''.join([ str(i) for i in peaks[-1]])}], val: {val_p}")
             print(f"cur peaks: {peaks}")
             continue
             #exit(0)
@@ -169,6 +186,7 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
             for _ in range(k_gd):
                 P = optimize(P, I)
 
+            all_cores = apply_const(P, cnstr=idxs_cores)
 
 
         if i_ref is not None: # For debug only
@@ -362,13 +380,14 @@ def _sample_abs(Y, key):
 
     return I
 
-def _sample(Y, key, cnstr):
+# def _sample(Y, key, cnstr):
+def _sample(Y, key):
     """Generate sample according to given probability TT-tensor Y."""
     d = len(Y)
 
-    if cnstr is not None:
-        Y = mul(Y, cnstr)
-        Y = _orthogonalize(Y, use_stab=False, orht_fst=True)
+    # if cnstr is not None:
+        # Y = mul(Y, cnstr)
+        # Y = _orthogonalize(Y, use_stab=False, orht_fst=True)
 
 
     keys = jax.random.split(key, d)
