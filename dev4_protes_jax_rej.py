@@ -83,6 +83,7 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
     shapes = [pi.shape[1] for pi in P] 
 
     idxs_cores = get_constrain_tens(shapes, peaks)
+    all_cores = apply_const(P, cnstr=idxs_cores)
 
     f = cached_func(f, info)
 
