@@ -43,7 +43,7 @@ def apply_const(Y, cnstr):
     return Y
 
 
-def sample_from_batch_iter(P, rng, k=100):
+def sample_from_batch_iter(P, rng, sample, k=100):
     pul_I = []
     pul_maxp = []
     while True:
@@ -97,7 +97,9 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
     shapes = [pi.shape[1] for pi in P] 
 
     # idxs_cores = get_constrain_tens(shapes, peaks)
-    all_cores = P
+    # all_cores = P
+    rng, key = jax.random.split(rng)
+    sample_from_batch = sample_from_batch_iter(P, key, sample)
 
     f = cached_func(f, info)
 
@@ -107,14 +109,15 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
     prev = None
     was_accept = True
     history_sample = []
-    history_sample_length = 10
+    history_sample_length = 20
 
     while True:
         flag = True
         cnt = 0
         while flag:
-            rng, key = jax.random.split(rng)
-            I, max_p = sample(all_cores, jax.random.split(key, k))
+            # rng, key = jax.random.split(rng)
+            # I, max_p = sample(all_cores, jax.random.split(key, k))
+            I, max_p = next(sample_from_batch)
 
             I0_list = I[0].tolist()
 
@@ -145,6 +148,8 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
                 P = optimize(P, I_big_trn)
 
             all_cores = P
+            rng, key = jax.random.split(rng)
+            sample_from_batch = sample_from_batch_iter(P, key, sample)
 
             val_p =  f(np.array([ peaks[-1] ]))
             print(f"Всё, заело, m {info['m']} | cache {info['M_cache']} |  number of peak: {len(peaks)} | max_p : {np.min(max_p)} ,  idx: \n [{''.join([ str(i) for i in peaks[-1]])}], val: {val_p}")
@@ -204,6 +209,8 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
                 P = optimize(P, I)
 
             all_cores = P
+            rng, key = jax.random.split(rng)
+            sample_from_batch = sample_from_batch_iter(P, key, sample)
 
 
         if i_ref is not None: # For debug only
