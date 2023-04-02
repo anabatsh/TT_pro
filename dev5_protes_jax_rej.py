@@ -596,7 +596,7 @@ def most_k_cache(cache, bad, k=100, p=1, key=None):
         rnd = jax.random.bernoulli(key, p=p, shape=(k,))
         res = res[rnd]
 
-        res = jax.random.shuffle(rng, res)
+        res = jax.random.permutation(rng, res)
 
     return res
 
