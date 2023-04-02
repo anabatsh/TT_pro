@@ -139,7 +139,7 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
                 print(f"Again in the same local minimum: {pI}")
             else:
                 peaks.append(pI)
-
+            print("Всё, заело, ", end='', flush=True)
             # idxs_cores = get_constrain_tens(shapes, peaks)
             len_rebuild = K_rebuild + len(peaks)
             len_rebuild = max( len_rebuild, int(len(f.cache)*0.2) )
@@ -152,12 +152,13 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
             for _ in range(k_gd):
                 P = optimize(P, I_big_trn)
 
+            print("..", end='', flush=True)
             all_cores = P
             rng, key = jax.random.split(rng)
             sample_from_batch = sample_from_batch_iter(P, key, sample)
 
             val_p =  f(np.array([ peaks[-1] ]))
-            print(f"Всё, заело, m {info['m']} | cache {info['M_cache']} |  number of peak: {len(peaks)} | max_p : {np.min(max_p)} ,  idx: \n [{''.join([ str(i) for i in peaks[-1]])}], val: {val_p}")
+            print(f" m {info['m']} | cache {info['M_cache']} |  number of peak: {len(peaks)} | max_p : {np.min(max_p)} ,  idx: \n [{''.join([ str(i) for i in peaks[-1]])}], val: {val_p}", flush=True)
             # print(f"cur peaks: {peaks}")
             continue
             #exit(0)
