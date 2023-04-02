@@ -7,6 +7,7 @@ import teneva
 
 import os
 from datetime import datetime
+from collections import defaultdict
 
 def save_raw_data(**data):
     now = datetime.now().strftime("%d_%m_%Y-%H:%M:%S")
@@ -140,7 +141,11 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1., how_to_upd=True, P=No
                 peaks.append(pI)
 
             # idxs_cores = get_constrain_tens(shapes, peaks)
-            I_big_trn = most_k_cache(f.cache, [], k=K_rebuild + len(peaks))
+            len_rebuild = K_rebuild + len(peaks)
+            len_rebuild = max( len_rebuild, int(len(f.cache)*0.2) )
+            rng, key = jax.random.split(rng)
+            I_big_trn = most_k_cache(f.cache, [], k=len_rebuild, p=0.8, key=key)
+
             # P = _generate_initial1r(n, is_rand=is_rand_init, sq=sq)
             keyP, key = jax.random.split(keyP)
             P =  _generate_initial(n, r, key)
@@ -564,7 +569,7 @@ def mul(Y1, Y2):
 
     return Y
 
-def most_k_cache(cache, bad, k=100):
+def most_k_cache(cache, bad, k=100, p=1, key=None):
     for i in cache:
         j = i
         break
@@ -585,6 +590,11 @@ def most_k_cache(cache, bad, k=100):
         cnt += 1
 
     idx = np.argsort(y[:cnt])
-    return all_I[idx[:k]]
+    res = all_I[idx[:k]]
+    if p < 1 and key is not None:
+        rnd = jax.random.bernoulli(key, p=p, shape=(k,))
+        res = res[rnd]
+
+    return res
 
 
