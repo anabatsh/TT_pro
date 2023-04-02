@@ -592,8 +592,11 @@ def most_k_cache(cache, bad, k=100, p=1, key=None):
     idx = np.argsort(y[:cnt])
     res = all_I[idx[:k]]
     if p < 1 and key is not None:
+        rng, key = jax.random.split(key)
         rnd = jax.random.bernoulli(key, p=p, shape=(k,))
         res = res[rnd]
+
+        res = jax.random.shuffle(rng, res)
 
     return res
 
