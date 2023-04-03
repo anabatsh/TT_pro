@@ -57,7 +57,7 @@ def sample_from_batch_iter(P, rng, sample, k=100):
         pul_maxp[1:]
 
 
-def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1, T_red=1.1, how_to_upd=True, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu', K_rebuild=300):
+def protes_jax_rej(f, n, m, k_gd=100, k_gd_reset=2, lr=1.E-4, r=2, T=1, T_red=1.1, how_to_upd=True, P=None, seed=42, info={}, i_ref=None, is_max=False, log=False, log_ind=False, mod='jax', device='cpu', K_rebuild=300):
     time = tpc()
     info.update({'mod': mod, 'is_max': is_max, 'm': 0, 't': 0, 'M_cache': 0,
         'i_opt': None, 'y_opt': None, 'm_opt_list': [], 'y_opt_list': [],
@@ -152,7 +152,7 @@ def protes_jax_rej(f, n, m, k_gd=100, lr=1.E-4, r=2, T=1, T_red=1.1, how_to_upd=
             # P = _generate_initial1r(n, is_rand=is_rand_init, sq=sq)
             keyP, key = jax.random.split(keyP)
             P =  _generate_initial(n, r, key)
-            for _ in range(k_gd):
+            for _ in range(k_gd_reset):
                 P = optimize(P, I_big_trn)
 
             print("..", end='', flush=True)
