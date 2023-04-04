@@ -580,20 +580,27 @@ def most_k_cache(cache, bad, k=100, p=1, key=None):
 
 
     K = len(cache)
-    all_I = np.empty([K, len(j)], dtype=np.int32)
-    y = np.empty(K)
+    # all_I = np.empty([K, len(j)], dtype=np.int32)
+    # y = np.empty(K)
+    all_r = []
+    y = []
 
     bad_set = set([tuple(i) for i in bad])
 
-    cnt = 0
+    # cnt = 0
     for X, Y in cache.items():
         if X in bad_set:
             continue
-        all_I = all_I.at[cnt].set(X)
-        y = y.at[cnt].set(Y)
-        cnt += 1
+        # all_I = all_I.at[cnt].set(X)
+        # y = y.at[cnt].set(Y)
+        all_I.append(X)
+        y.append(Y)
+        # cnt += 1
 
-    idx = np.argsort(y[:cnt])
+    all_I = np.array(all_I)
+    y = np.array(y)
+
+    idx = np.argsort(y)
     res = all_I[idx[:k]]
     if p < 1 and key is not None:
         rng, key = jax.random.split(key)
