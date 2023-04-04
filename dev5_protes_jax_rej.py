@@ -582,7 +582,7 @@ def most_k_cache(cache, bad, k=100, p=1, key=None):
     K = len(cache)
     # all_I = np.empty([K, len(j)], dtype=np.int32)
     # y = np.empty(K)
-    all_r = []
+    all_I = []
     y = []
 
     bad_set = set([tuple(i) for i in bad])
