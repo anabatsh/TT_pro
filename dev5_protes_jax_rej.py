@@ -145,7 +145,7 @@ def protes_jax_rej(f, n, m, k_gd=100, k_gd_reset=1, lr=1.E-4, r=2, T=1, T_red=1.
             print("Всё, заело, ", end='', flush=True)
             # idxs_cores = get_constrain_tens(shapes, peaks)
             len_rebuild = K_rebuild + len(peaks)
-            len_rebuild = min(10000, max( len_rebuild, int(len(f.cache)*0.2) ) )
+            len_rebuild = min(100000, max( len_rebuild, int(len(f.cache)*0.2) ) )
             rng, key = jax.random.split(rng)
             I_big_trn = most_k_cache(f.cache, [], k=len_rebuild, p=0.8, key=key)
 
